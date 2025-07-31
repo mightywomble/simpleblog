@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git-Powered Blog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Enhanced Glass-like Effect 5G Modern Design */
+        .glass {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(15px) saturate(150%);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Enhanced Article Modal */
+        #article-modal {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        #modal-content {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            color: #444;
+        }
+        #modal-content h1,
+        #modal-content h2,
+        #modal-content h3 {
+            color: #2C3E50;
+            margin-bottom: 15px;
+        }
+
+        #modal-content p {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        #modal-content code {
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 90%;
+            color: #e74c3c;
+        }
+
+        #modal-content a {
+            color: #3498db;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        h1.banner {
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        /* Code Block */
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 5px;
+            display: block;
+            overflow-x: auto;
+        }
+
+        /* Styled Links */
+        a {
+            color: #1E90FF;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        a:hover {
+            color: #374151;
+            border-bottom: 2px solid #1E90FF;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-800 via-blue-900 to-emerald-800 min-h-screen text-gray-800">
+    <!-- Animated Background Overlay -->
+    <div class="fixed inset-0 bg-gradient-to-r from-blue-600/20 via-emerald-600/20 to-teal-500/20 animate-pulse"></div>
+
+    <!-- Header -->
+    <header class="glass shadow-md sticky top-0 z-10 relative">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">My Blog</h1>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" id="search" placeholder="Search articles..." class="border rounded-lg py-2 px-4 w-48 md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <svg class="w-5 h-5 absolute right-3 top-2.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <button id="admin-login-btn" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Admin</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 relative">
+        <div id="blog-posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Blog post cards will be inserted here -->
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="article-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-20">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+            <div class="p-4 md:p-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="modal-title" class="text-2xl md:text-3xl font-bold"></h2>
+                    <button id="modal-close" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+                </div>
+                <div id="modal-content" class="prose max-w-none"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-20">
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-4">Admin Login</h2>
+            <form id="admin-login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Login</button>
+                    <button type="button" id="admin-login-close" class="text-gray-500 hover:text-gray-800">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Force Password Change Modal -->
+    <div id="force-password-change-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-20">
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-2">Change Default Password</h2>
+            <p class="text-sm text-gray-600 mb-4">For security, please change the default password.</p>
+            <form id="force-password-change-form">
+                <div class="mb-4">
+                    <label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label>
+                    <input type="password" id="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                </div>
+                <div class="mb-6">
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                    <input type="password" id="confirm-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Set New Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="fixed inset-0 bg-gray-100 p-4 md:p-8 hidden z-20 overflow-y-auto">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">Admin Panel</h2>
+                <button id="admin-panel-close" class="text-gray-500 hover:text-gray-800 text-4xl">&times;</button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div>
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Manage Repositories</h3>
+                        <form id="add-repo-form" class="flex items-center space-x-2">
+                            <input type="text" id="repo-url" placeholder="e.g., username/repository" class="border rounded-lg py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 whitespace-nowrap">Add Repo</button>
+                        </form>
+                        <div id="repo-list" class="mt-4"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-4">Actions</h3>
+                        <button id="scan-btn" class="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 flex items-center justify-center">
+                            <span id="scan-btn-text">Scan for New Articles</span>
+                            <span id="scan-spinner" class="hidden animate-spin">&#9696;</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Blog Name</h3>
+                        <form id="blog-name-form" class="flex items-center space-x-2">
+                            <input type="text" id="blog-name-input" placeholder="Enter new blog name" class="border rounded-lg py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <button type="submit" class="bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 whitespace-nowrap">Update Name</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-4">Change Password</h3>
+                        <form id="change-password-form">
+                            <div class="mb-4">
+                                <label for="current-password-admin" class="block text-sm font-medium text-gray-700">Current Password</label>
+                                <input type="password" id="current-password-admin" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="new-password-admin" class="block text-sm font-medium text-gray-700">New Password</label>
+                                <input type="password" id="new-password-admin" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="confirm-password-admin" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                                <input type="password" id="confirm-password-admin" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                            </div>
+                            <button type="submit" class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">Update Password</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION ---
+            const ADMIN_USERNAME = 'admin';
+            const DEFAULT_PASSWORD = 'password';
+
+            // --- DOM ELEMENTS ---
+            const blogPostsContainer = document.getElementById('blog-posts');
+            const searchInput = document.getElementById('search');
+            // Modals
+            const articleModal = document.getElementById('article-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
+            const modalCloseBtn = document.getElementById('modal-close');
+            // Admin Login
+            const adminLoginBtn = document.getElementById('admin-login-btn');
+            const adminLoginModal = document.getElementById('admin-login-modal');
+            const adminLoginForm = document.getElementById('admin-login-form');
+            const adminLoginCloseBtn = document.getElementById('admin-login-close');
+            // Force Password Change
+            const forcePasswordChangeModal = document.getElementById('force-password-change-modal');
+            const forcePasswordChangeForm = document.getElementById('force-password-change-form');
+            // Admin Panel
+            const adminPanel = document.getElementById('admin-panel');
+            const adminPanelCloseBtn = document.getElementById('admin-panel-close');
+            const addRepoForm = document.getElementById('add-repo-form');
+            const repoUrlInput = document.getElementById('repo-url');
+            const repoListContainer = document.getElementById('repo-list');
+            const scanBtn = document.getElementById('scan-btn');
+            const scanBtnText = document.getElementById('scan-btn-text');
+            const scanSpinner = document.getElementById('scan-spinner');
+            const blogNameForm = document.getElementById('blog-name-form');
+            const blogNameInput = document.getElementById('blog-name-input');
+            const blogTitleElement = document.querySelector('header h1');
+            const changePasswordForm = document.getElementById('change-password-form');
+
+            // --- STATE MANAGEMENT ---
+            let allPosts = [];
+            let repositories = JSON.parse(localStorage.getItem('blog_repos')) || [];
+            let isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+
+            // --- SECURITY (Password Management) ---
+            // NOTE: Storing passwords in localStorage is NOT secure for production.
+            // This is for demonstration purposes in a client-side-only application.
+            // A real application should use a secure backend with hashed passwords.
+            function getAdminPassword() {
+                return localStorage.getItem('admin_password') || DEFAULT_PASSWORD;
+            }
+
+            function setAdminPassword(newPassword) {
+                localStorage.setItem('admin_password', newPassword);
+            }
+
+            // --- GITHUB API ---
+            const converter = new showdown.Converter();
+
+            async function fetchFromGitHub(url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`GitHub API request failed: ${response.statusText}`);
+                    }
+                    return response.json();
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    alert("Could not connect to GitHub. Please check your internet connection.");
+                    return null; // Return null to handle the error gracefully
+                }
+            }
+            
+            async function getArticlesFromRepo(repoName) {
+                const posts = [];
+                try {
+                    const contents = await fetchFromGitHub(`https://api.github.com/repos/${repoName}/contents`);
+                     if (!contents) return []; // If fetch failed, return empty array
+                    await Promise.all(contents.map(item => processRepoItem(item, repoName, posts)));
+                } catch (error) {
+                    console.error(`Error fetching from repo ${repoName}:`, error);
+                    alert(`Failed to fetch articles from ${repoName}. Check the repository path and permissions.`);
+                }
+                return posts;
+            }
+
+            async function processRepoItem(item, repoName, posts, currentPath = '') {
+                const path = currentPath ? `${currentPath}/${item.name}` : item.name;
+                if (item.type === 'dir') {
+                    const contents = await fetchFromGitHub(item.url);
+                     if (!contents) return;
+                    await Promise.all(contents.map(newItem => processRepoItem(newItem, repoName, posts, path)));
+                } else if (item.name.endsWith('.md') && item.download_url) {
+                    try {
+                        const response = await fetch(item.download_url);
+                        const fileContent = await response.text();
+                        const htmlContent = converter.makeHtml(fileContent);
+                        const pathParts = path.split('/');
+                        const tag = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'general';
+                        
+                        posts.push({
+                            title: item.name.replace('.md', ''),
+                            content: htmlContent,
+                            tag: tag,
+                            repo: repoName,
+                            path: path,
+                            likes: parseInt(localStorage.getItem(`like_${path}`) || '0')
+                        });
+                    } catch (error) {
+                        console.warn(`Could not fetch content for ${path}:`, error);
+                    }
+                }
+            }
+
+
+            // --- UI RENDERING ---
+            function renderPosts(postsToRender) {
+                blogPostsContainer.innerHTML = '';
+                if (postsToRender.length === 0) {
+                    blogPostsContainer.innerHTML = '<p class="text-gray-500 col-span-full text-center">No articles found. Try scanning for new articles in the admin panel.</p>';
+                    return;
+                }
+                postsToRender.forEach(post => {
+                    const postCard = document.createElement('div');
+                    postCard.className = 'card glass overflow-hidden cursor-pointer';
+                    postCard.innerHTML = `
+                        <div class="p-6">
+                            <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">${post.tag}</span>
+                            <h3 class="text-xl font-bold mt-2 mb-2 text-white">${post.title}</h3>
+                            <div class="text-white h-20 overflow-hidden">${truncateHTML(post.content, 100)}</div>
+                        </div>
+                        <div class="p-6 bg-gray-50 flex justify-between items-center">
+                            <div class="flex space-x-4">
+                                <button data-path="${post.path}" class="like-btn flex items-center space-x-1 text-gray-500 hover:text-red-500">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                                    <span class="like-count">${post.likes}</span>
+                                </button>
+                                <button data-url="${window.location.href}" class="share-btn flex items-center space-x-1 text-gray-500 hover:text-blue-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.002l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.368a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path></svg>
+                                    <span>Share</span>
+                                </button>
+                            </div>
+                            <button class="read-more-btn text-blue-500 hover:underline">Read More</button>
+                        </div>
+                    `;
+                    postCard.querySelector('.read-more-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openArticleModal(post);
+                    });
+                     postCard.addEventListener('click', () => openArticleModal(post));
+                    blogPostsContainer.appendChild(postCard);
+                });
+            }
+            
+            function truncateHTML(html, length) {
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                let text = div.textContent || div.innerText || "";
+                return text.length > length ? text.substring(0, length) + "..." : text;
+            }
+
+            function renderRepos() {
+                repoListContainer.innerHTML = '';
+                repositories.forEach((repo, index) => {
+                    const repoEl = document.createElement('div');
+                    repoEl.className = 'flex justify-between items-center bg-gray-100 p-2 rounded-md mt-2';
+                    repoEl.innerHTML = `
+                        <span>${repo}</span>
+                        <button data-index="${index}" class="remove-repo-btn text-red-500 hover:text-red-700 font-bold">Remove</button>
+                    `;
+                    repoListContainer.appendChild(repoEl);
+                });
+            }
+
+            function updateBlogName() {
+                const savedName = localStorage.getItem('blog_name');
+                if (savedName) {
+                    blogTitleElement.textContent = savedName;
+                    blogNameInput.value = savedName;
+                }
+            }
+
+
+            // --- EVENT HANDLERS ---
+            function handleSearch() {
+                const query = searchInput.value.toLowerCase();
+                const filteredPosts = allPosts.filter(post =>
+                    post.title.toLowerCase().includes(query) ||
+                    post.tag.toLowerCase().includes(query) ||
+                    post.content.toLowerCase().includes(query)
+                );
+                renderPosts(filteredPosts);
+            }
+
+            function handleLike(e) {
+                const button = e.target.closest('.like-btn');
+                if (!button) return;
+                const path = button.dataset.path;
+                const post = allPosts.find(p => p.path === path);
+                if (post) {
+                    post.likes++;
+                    localStorage.setItem(`like_${path}`, post.likes);
+                    button.querySelector('.like-count').textContent = post.likes;
+                }
+            }
+
+            async function handleShare(e) {
+                const button = e.target.closest('.share-btn');
+                if (!button) return;
+                const url = button.dataset.url;
+                const postTitle = button.closest('.card').querySelector('h3').textContent;
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: postTitle,
+                            text: `Check out this article: ${postTitle}`,
+                            url: url,
+                        });
+                    } catch (error) {
+                        console.error('Error sharing:', error);
+                    }
+                } else {
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('Link copied to clipboard!');
+                    });
+                }
+            }
+            
+            async function scanForArticles() {
+                scanBtn.disabled = true;
+                scanSpinner.classList.remove('hidden');
+                scanBtnText.classList.add('hidden');
+
+                let newAllPosts = [];
+                for (const repo of repositories) {
+                    const posts = await getArticlesFromRepo(repo);
+                    newAllPosts = newAllPosts.concat(posts);
+                }
+                allPosts = newAllPosts;
+                localStorage.setItem('blog_posts', JSON.stringify(allPosts));
+                renderPosts(allPosts);
+
+                scanBtn.disabled = false;
+                scanSpinner.classList.add('hidden');
+                scanBtnText.classList.remove('hidden');
+            }
+
+            // --- Modal and Panel Toggles ---
+            function openArticleModal(post) {
+                modalTitle.textContent = post.title;
+                modalContent.innerHTML = post.content;
+                articleModal.classList.remove('hidden');
+                articleModal.classList.add('flex');
+            }
+
+            function closeArticleModal() {
+                articleModal.classList.add('hidden');
+                articleModal.classList.remove('flex');
+            }
+
+            function showAdminPanel() { adminPanel.classList.remove('hidden'); }
+            function hideAdminPanel() { adminPanel.classList.add('hidden'); }
+            function showAdminLogin() { adminLoginModal.classList.remove('hidden'); adminLoginModal.classList.add('flex'); }
+            function hideAdminLogin() { adminLoginModal.classList.add('hidden'); adminLoginModal.classList.remove('flex'); }
+            function showForcePasswordChange() { forcePasswordChangeModal.classList.remove('hidden'); forcePasswordChangeModal.classList.add('flex'); }
+            function hideForcePasswordChange() { forcePasswordChangeModal.classList.add('hidden'); forcePasswordChangeModal.classList.remove('flex'); }
+            
+            // --- Admin Logic Handlers ---
+            function login(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const currentAdminPassword = getAdminPassword();
+
+                if (username === ADMIN_USERNAME && password === currentAdminPassword) {
+                    isLoggedIn = true;
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    hideAdminLogin();
+
+                    if (currentAdminPassword === DEFAULT_PASSWORD) {
+                        showForcePasswordChange();
+                    } else {
+                        showAdminPanel();
+                    }
+                } else {
+                    alert('Invalid credentials');
+                }
+            }
+
+            function handleForcePasswordChange(e) {
+                e.preventDefault();
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+
+                if (newPassword.length < 6) {
+                    alert('Password must be at least 6 characters long.');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    alert('Passwords do not match.');
+                    return;
+                }
+
+                setAdminPassword(newPassword);
+                alert('Password changed successfully.');
+                hideForcePasswordChange();
+                showAdminPanel();
+            }
+
+            function handleChangePassword(e) {
+                e.preventDefault();
+                const currentPassword = document.getElementById('current-password-admin').value;
+                const newPassword = document.getElementById('new-password-admin').value;
+                const confirmPassword = document.getElementById('confirm-password-admin').value;
+
+                if (currentPassword !== getAdminPassword()) {
+                    alert('Current password is incorrect.');
+                    return;
+                }
+                if (newPassword.length < 6) {
+                    alert('New password must be at least 6 characters long.');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match.');
+                    return;
+                }
+
+                setAdminPassword(newPassword);
+                alert('Password updated successfully.');
+                e.target.reset();
+            }
+            
+            function addRepo(e) {
+                e.preventDefault();
+                const repoUrl = repoUrlInput.value.trim();
+                if (repoUrl && !repositories.includes(repoUrl)) {
+                    repositories.push(repoUrl);
+                    localStorage.setItem('blog_repos', JSON.stringify(repositories));
+                    renderRepos();
+                    repoUrlInput.value = '';
+                }
+            }
+
+            function removeRepo(e) {
+                if (e.target.classList.contains('remove-repo-btn')) {
+                    const index = parseInt(e.target.dataset.index);
+                    repositories.splice(index, 1);
+                    localStorage.setItem('blog_repos', JSON.stringify(repositories));
+                    renderRepos();
+                }
+            }
+
+            function handleBlogNameUpdate(e) {
+                e.preventDefault();
+                const newName = blogNameInput.value.trim();
+                if (newName) {
+                    localStorage.setItem('blog_name', newName);
+                    updateBlogName();
+                    alert('Blog name updated!');
+                }
+            }
+
+            // --- INITIALIZATION ---
+            function init() {
+                // Load initial data
+                const cachedPosts = JSON.parse(localStorage.getItem('blog_posts'));
+                if (cachedPosts && cachedPosts.length > 0) {
+                    allPosts = cachedPosts;
+                    renderPosts(allPosts);
+                } else if (repositories.length > 0) {
+                    scanForArticles();
+                } else {
+                    renderPosts([]);
+                }
+
+                updateBlogName();
+                renderRepos();
+
+                // Event Listeners
+                searchInput.addEventListener('input', handleSearch);
+                blogPostsContainer.addEventListener('click', (e) => {
+                    handleLike(e);
+                    handleShare(e);
+                });
+                
+                // Modal listeners
+                modalCloseBtn.addEventListener('click', closeArticleModal);
+                articleModal.addEventListener('click', (e) => {
+                    if (e.target === articleModal) closeArticleModal();
+                });
+
+                // Admin listeners
+                adminLoginBtn.addEventListener('click', () => {
+                    if (isLoggedIn) {
+                        showAdminPanel();
+                    } else {
+                        showAdminLogin();
+                    }
+                });
+                adminLoginForm.addEventListener('submit', login);
+                adminLoginCloseBtn.addEventListener('click', hideAdminLogin);
+                adminPanelCloseBtn.addEventListener('click', hideAdminPanel);
+                forcePasswordChangeForm.addEventListener('submit', handleForcePasswordChange);
+                changePasswordForm.addEventListener('submit', handleChangePassword);
+                addRepoForm.addEventListener('submit', addRepo);
+                repoListContainer.addEventListener('click', removeRepo);
+                scanBtn.addEventListener('click', scanForArticles);
+                blogNameForm.addEventListener('submit', handleBlogNameUpdate);
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
