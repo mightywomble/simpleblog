@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Enhanced Glass-like Effect  5 G Modern Design */
+        /* Enhanced Glass-like Effect 5G Modern Design */
         .glass {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
             backdrop-filter: blur(15px) saturate(150%);
@@ -17,90 +17,59 @@
             box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
-
-        /* Enhanced Article Modal & Content Styling */
+        
+        /* Enhanced Article Modal */
         #article-modal {
             background: rgba(0, 0, 0, 0.7);
         }
-
         #modal-content {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 2rem;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
             border-radius: 15px;
-            color: #374151;
-            line-height: 1.7;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            color: #444;
+        }
+        #modal-content h1,
+        #modal-content h2,
+        #modal-content h3 {
+            color: #2C3E50;
+            margin-bottom: 15px;
         }
 
-        /* Headings */
-        #modal-content h1, #modal-content h2, #modal-content h3, #modal-content h4 {
-            font-weight: 700;
-            color: #111827;
-            margin-top: 1.5em;
-            margin-bottom: 0.75em;
-            line-height: 1.2;
-        }
-        #modal-content h1 { font-size: 2rem; }
-        #modal-content h2 { font-size: 1.75rem; }
-        #modal-content h3 { font-size: 1.5rem; }
-
-        /* Paragraphs */
         #modal-content p {
-            margin-bottom: 1.25em;
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
 
-        /* Code Blocks */
-        #modal-content pre {
-            background-color: #1E293B; /* Dark blue-gray background */
-            color: #E2E8F0;
-            padding: 1.25em;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin-bottom: 1.5em;
-        }
-
-        #modal-content pre code {
-            background-color: transparent;
-            padding: 0;
-            font-size: 0.9em;
-            color: inherit;
-        }
-
-        /* Inline Code */
         #modal-content code {
-            background-color: #E5E7EB;
-            color: #be123c;
-            padding: 0.2em 0.4em;
-            margin: 0 0.1em;
-            font-size: 85%;
-            border-radius: 4px;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 90%;
+            color: #e74c3c;
         }
 
-        /* Links */
         #modal-content a {
-            color: #2563EB;
+            color: #3498db;
+            font-weight: bold;
             text-decoration: underline;
-            font-weight: 500;
         }
-        #modal-content a:hover {
-            color: #1D4ED8;
-        }
-
-        /* Lists */
-        #modal-content ul, #modal-content ol {
-            margin-left: 1.5em;
-            margin-bottom: 1.25em;
-            list-style-position: outside;
-        }
-        #modal-content li {
-            margin-bottom: 0.5em;
-        }
-
         h1.banner {
             background: #4CAF50;
             color: white;
             padding: 10px;
             border-radius: 5px;
             text-align: center;
+        }
+
+        /* Code Block */
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 5px;
+            display: block;
+            overflow-x: auto;
         }
 
         /* Styled Links */
@@ -127,8 +96,10 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-800 via-blue-900 to-emerald-800 min-h-screen text-gray-800">
+    <!-- Animated Background Overlay -->
     <div class="fixed inset-0 bg-gradient-to-r from-blue-600/20 via-emerald-600/20 to-teal-500/20 animate-pulse"></div>
 
+    <!-- Header -->
     <header class="glass shadow-md sticky top-0 z-10 relative">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-gray-900">My Blog</h1>
@@ -144,11 +115,14 @@
         </div>
     </header>
 
+    <!-- Main Content -->
     <main class="container mx-auto px-4 py-8 relative">
         <div id="blog-posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            </div>
+            <!-- Blog post cards will be inserted here -->
+        </div>
     </main>
 
+    <!-- Article Modal -->
     <div id="article-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-20">
         <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] overflow-y-auto">
             <div class="p-4 md:p-8">
@@ -161,6 +135,7 @@
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
     <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-20">
         <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm">
             <h2 class="text-2xl font-bold mb-4">Admin Login</h2>
@@ -181,6 +156,7 @@
         </div>
     </div>
 
+    <!-- Force Password Change Modal -->
     <div id="force-password-change-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-20">
         <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm">
             <h2 class="text-2xl font-bold mb-2">Change Default Password</h2>
@@ -199,6 +175,7 @@
         </div>
     </div>
 
+    <!-- Admin Panel -->
     <div id="admin-panel" class="fixed inset-0 bg-gray-100 p-4 md:p-8 hidden z-20 overflow-y-auto">
         <div class="container mx-auto">
             <div class="flex justify-between items-center mb-6">
@@ -207,6 +184,7 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
                 <div>
                     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 class="text-xl font-semibold mb-4">Manage Repositories</h3>
@@ -226,6 +204,7 @@
                     </div>
                 </div>
 
+                <!-- Right Column -->
                 <div>
                     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
                         <h3 class="text-xl font-semibold mb-4">Blog Name</h3>
@@ -328,7 +307,7 @@
                     return null; // Return null to handle the error gracefully
                 }
             }
-
+            
             async function getArticlesFromRepo(repoName) {
                 const posts = [];
                 try {
@@ -352,30 +331,12 @@
                     try {
                         const response = await fetch(item.download_url);
                         const fileContent = await response.text();
-
-                        // Use the filename as a fallback title
-                        let title = item.name.replace(/\.md$/, '');
-                        let markdownContent = fileContent;
-
-                        // Check if the first non-empty line is an H1 heading
-                        const lines = fileContent.split('\n');
-                        const firstLineIndex = lines.findIndex(line => line.trim() !== '');
-                        const firstLine = firstLineIndex !== -1 ? lines[firstLineIndex].trim() : '';
-
-                        if (firstLine.startsWith('# ')) {
-                            // If it is, use it as the title
-                            title = firstLine.substring(2).trim();
-                            // And remove that line from the rest of the content
-                            lines.splice(firstLineIndex, 1);
-                            markdownContent = lines.join('\n');
-                        }
-
-                        const htmlContent = converter.makeHtml(markdownContent);
+                        const htmlContent = converter.makeHtml(fileContent);
                         const pathParts = path.split('/');
                         const tag = pathParts.length > 1 ? pathParts[pathParts.length - 2] : 'general';
-
+                        
                         posts.push({
-                            title: title,
+                            title: item.name.replace('.md', ''),
                             content: htmlContent,
                             tag: tag,
                             repo: repoName,
@@ -427,7 +388,7 @@
                     blogPostsContainer.appendChild(postCard);
                 });
             }
-
+            
             function truncateHTML(html, length) {
                 const div = document.createElement('div');
                 div.innerHTML = html;
@@ -501,7 +462,7 @@
                     });
                 }
             }
-
+            
             async function scanForArticles() {
                 scanBtn.disabled = true;
                 scanSpinner.classList.remove('hidden');
@@ -540,7 +501,7 @@
             function hideAdminLogin() { adminLoginModal.classList.add('hidden'); adminLoginModal.classList.remove('flex'); }
             function showForcePasswordChange() { forcePasswordChangeModal.classList.remove('hidden'); forcePasswordChangeModal.classList.add('flex'); }
             function hideForcePasswordChange() { forcePasswordChangeModal.classList.add('hidden'); forcePasswordChangeModal.classList.remove('flex'); }
-
+            
             // --- Admin Logic Handlers ---
             function login(e) {
                 e.preventDefault();
@@ -606,7 +567,7 @@
                 alert('Password updated successfully.');
                 e.target.reset();
             }
-
+            
             function addRepo(e) {
                 e.preventDefault();
                 const repoUrl = repoUrlInput.value.trim();
@@ -659,7 +620,7 @@
                     handleLike(e);
                     handleShare(e);
                 });
-
+                
                 // Modal listeners
                 modalCloseBtn.addEventListener('click', closeArticleModal);
                 articleModal.addEventListener('click', (e) => {
