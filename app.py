@@ -15,4 +15,4 @@ if __name__ == '__main__':
     # Debug=True allows for automatic reloading when changes are made.
     # host='0.0.0.0' makes it accessible from any IP address
     # port=5055 sets the specific port
-    app.run(host='0.0.0.0', port=5055, debug=True)
+    app.run(host='0.0.0.0', port=5057, debug=True)
