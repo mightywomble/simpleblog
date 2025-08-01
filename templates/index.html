@@ -313,7 +313,22 @@
                 }
             }
 
-            // Load configuration from server
+            // Load public configuration (available to all visitors)
+            async function loadPublicConfig() {
+                try {
+                    const response = await fetch('/api/public/config');
+                    if (response.ok) {
+                        blogConfig = await response.json();
+                        repositories = blogConfig.repositories || [];
+                        updateBlogName();
+                        renderRepos();
+                    }
+                } catch (error) {
+                    console.error('Error loading public config:', error);
+                }
+            }
+
+            // Load full configuration (admin only)
             async function loadConfig() {
                 try {
                     const response = await fetch('/api/config');
@@ -739,7 +754,10 @@
 
             // --- INITIALIZATION ---
             async function init() {
-                // Check authentication status and load config
+                // Always load public config first (available to all visitors)
+                await loadPublicConfig();
+                
+                // Check authentication status and load full config if authenticated
                 await checkAuthStatus();
                 if (isLoggedIn) {
                     await loadConfig();

@@ -268,6 +268,24 @@ def remove_repository(index):
     else:
         return jsonify({'error': 'Invalid repository index'}), 400
 
+@app.route('/api/public/config', methods=['GET'])
+def get_public_config():
+    """Get public configuration (blog name and repositories) without authentication"""
+    config = load_config()
+    if not config:
+        # Return defaults if config fails to load
+        return jsonify({
+            'blog_name': 'My Blog',
+            'repositories': []
+        })
+    
+    # Return only public information
+    public_config = {
+        'blog_name': config.get('blog_name', 'My Blog'),
+        'repositories': config.get('repositories', [])
+    }
+    return jsonify(public_config)
+
 @app.route('/api/auth/status', methods=['GET'])
 def auth_status():
     """Check authentication status"""
