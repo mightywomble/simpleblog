@@ -313,16 +313,19 @@
                 }
             }
 
-            // --- SECURITY (Password Management) ---
-            // NOTE: Storing passwords in localStorage is NOT secure for production.
-            // This is for demonstration purposes in a client-side-only application.
-            // A real application should use a secure backend with hashed passwords.
-            function getAdminPassword() {
-                return localStorage.getItem('admin_password') || DEFAULT_PASSWORD;
-            }
-
-            function setAdminPassword(newPassword) {
-                localStorage.setItem('admin_password', newPassword);
+            // Load configuration from server
+            async function loadConfig() {
+                try {
+                    const response = await fetch('/api/config');
+                    if (response.ok) {
+                        blogConfig = await response.json();
+                        repositories = blogConfig.repositories || [];
+                        updateBlogName();
+                        renderRepos();
+                    }
+                } catch (error) {
+                    console.error('Error loading config:', error);
+                }
             }
 
             // --- GITHUB API ---
@@ -462,10 +465,9 @@
             }
 
             function updateBlogName() {
-                const savedName = localStorage.getItem('blog_name');
-                if (savedName) {
-                    blogTitleElement.textContent = savedName;
-                    blogNameInput.value = savedName;
+                if (blogConfig.blog_name) {
+                    blogTitleElement.textContent = blogConfig.blog_name;
+                    blogNameInput.value = blogConfig.blog_name;
                 }
             }
 
@@ -555,29 +557,37 @@
             function hideForcePasswordChange() { forcePasswordChangeModal.classList.add('hidden'); forcePasswordChangeModal.classList.remove('flex'); }
 
             // --- Admin Logic Handlers ---
-            function login(e) {
+            async function login(e) {
                 e.preventDefault();
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
-                const currentAdminPassword = getAdminPassword();
+                
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
 
-                if (username === ADMIN_USERNAME && password === currentAdminPassword) {
-                    isLoggedIn = true;
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('loginTimestamp', Date.now().toString());
-                    hideAdminLogin();
+                    if (response.ok) {
+                        const data = await response.json();
+                        isLoggedIn = true;
+                        hideAdminLogin();
 
-                    if (currentAdminPassword === DEFAULT_PASSWORD) {
-                        showForcePasswordChange();
+                        if (data.requires_password_change) {
+                            showForcePasswordChange();
+                        } else {
+                            showAdminPanel();
+                        }
                     } else {
-                        showAdminPanel();
+                        alert('Invalid credentials');
                     }
-                } else {
-                    alert('Invalid credentials');
+                } catch (error) {
+                    alert('Login failed. Please try again later.');
                 }
             }
 
-            function handleForcePasswordChange(e) {
+            async function handleForcePasswordChange(e) {
                 e.preventDefault();
                 const newPassword = document.getElementById('new-password').value;
                 const confirmPassword = document.getElementById('confirm-password').value;
@@ -591,22 +601,35 @@
                     return;
                 }
 
-                setAdminPassword(newPassword);
-                alert('Password changed successfully.');
-                hideForcePasswordChange();
-                showAdminPanel();
+                try {
+                    const response = await fetch('/api/config/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            current_password: 'password', // Default password for force change
+                            new_password: newPassword 
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('Password changed successfully.');
+                        hideForcePasswordChange();
+                        showAdminPanel();
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to change password');
+                    }
+                } catch (error) {
+                    alert('Failed to change password. Please try again.');
+                }
             }
 
-            function handleChangePassword(e) {
+            async function handleChangePassword(e) {
                 e.preventDefault();
                 const currentPassword = document.getElementById('current-password-admin').value;
                 const newPassword = document.getElementById('new-password-admin').value;
                 const confirmPassword = document.getElementById('confirm-password-admin').value;
 
-                if (currentPassword !== getAdminPassword()) {
-                    alert('Current password is incorrect.');
-                    return;
-                }
                 if (newPassword.length < 6) {
                     alert('New password must be at least 6 characters long.');
                     return;
@@ -616,38 +639,101 @@
                     return;
                 }
 
-                setAdminPassword(newPassword);
-                alert('Password updated successfully.');
-                e.target.reset();
+                try {
+                    const response = await fetch('/api/config/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            current_password: currentPassword,
+                            new_password: newPassword 
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('Password updated successfully.');
+                        e.target.reset();
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to update password');
+                    }
+                } catch (error) {
+                    alert('Failed to update password. Please try again.');
+                }
             }
 
-            function addRepo(e) {
+            async function addRepo(e) {
                 e.preventDefault();
                 const repoUrl = repoUrlInput.value.trim();
-                if (repoUrl && !repositories.includes(repoUrl)) {
-                    repositories.push(repoUrl);
-                    localStorage.setItem('blog_repos', JSON.stringify(repositories));
-                    renderRepos();
-                    repoUrlInput.value = '';
+                
+                if (!repoUrl) return;
+                
+                try {
+                    const response = await fetch('/api/repositories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ repository: repoUrl })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        repositories = data.repositories;
+                        renderRepos();
+                        repoUrlInput.value = '';
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to add repository');
+                    }
+                } catch (error) {
+                    alert('Failed to add repository. Please try again.');
                 }
             }
 
-            function removeRepo(e) {
+            async function removeRepo(e) {
                 if (e.target.classList.contains('remove-repo-btn')) {
                     const index = parseInt(e.target.dataset.index);
-                    repositories.splice(index, 1);
-                    localStorage.setItem('blog_repos', JSON.stringify(repositories));
-                    renderRepos();
+                    
+                    try {
+                        const response = await fetch(`/api/repositories/${index}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            repositories = data.repositories;
+                            renderRepos();
+                        } else {
+                            const data = await response.json();
+                            alert(data.error || 'Failed to remove repository');
+                        }
+                    } catch (error) {
+                        alert('Failed to remove repository. Please try again.');
+                    }
                 }
             }
 
-            function handleBlogNameUpdate(e) {
+            async function handleBlogNameUpdate(e) {
                 e.preventDefault();
                 const newName = blogNameInput.value.trim();
-                if (newName) {
-                    localStorage.setItem('blog_name', newName);
-                    updateBlogName();
-                    alert('Blog name updated!');
+                
+                if (!newName) return;
+                
+                try {
+                    const response = await fetch('/api/config/blog-name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ blog_name: newName })
+                    });
+
+                    if (response.ok) {
+                        blogConfig.blog_name = newName;
+                        updateBlogName();
+                        alert('Blog name updated!');
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to update blog name');
+                    }
+                } catch (error) {
+                    alert('Failed to update blog name. Please try again.');
                 }
             }
 
