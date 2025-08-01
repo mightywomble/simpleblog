@@ -738,7 +738,13 @@
             }
 
             // --- INITIALIZATION ---
-            function init() {
+            async function init() {
+                // Check authentication status and load config
+                await checkAuthStatus();
+                if (isLoggedIn) {
+                    await loadConfig();
+                }
+
                 // Load initial data
                 const cachedPosts = JSON.parse(localStorage.getItem('blog_posts'));
                 if (cachedPosts && cachedPosts.length > 0) {

@@ -1,7 +1,7 @@
 {
   "blog_name": "My Blog",
   "admin_username": "admin",
-  "admin_password_hash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBdXaUjOl8HkJi",
+  "admin_password_hash": "scrypt:32768:8:1$hhsORDpLCY9Dz2Un$1a5ac4f13503897fabbe1fe6c403538b9a94025fa32e58a48f4799e207c83c9219b0bac3949b84b33dc6d63c9f965a72e204ef331e52c2bd4874e4499bd05290",
   "repositories": [],
   "session_timeout_hours": 24
 }

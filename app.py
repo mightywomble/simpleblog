@@ -41,9 +41,20 @@ def load_config():
     """Load configuration from JSON file"""
     try:
         with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
+            config = json.load(f)
+            
+        # Validate required fields
+        required_fields = ['blog_name', 'admin_username', 'admin_password_hash', 'repositories']
+        for field in required_fields:
+            if field not in config:
+                print(f"Missing required field '{field}' in config.json")
+                return None
+                
+        return config
+        
     except FileNotFoundError:
         # Create default config if file doesn't exist
+        print("Config file not found, creating default configuration...")
         default_config = {
             "blog_name": "My Blog",
             "admin_username": "admin",
@@ -51,9 +62,17 @@ def load_config():
             "repositories": [],
             "session_timeout_hours": 24
         }
-        save_config(default_config)
-        return default_config
-    except json.JSONDecodeError:
+        if save_config(default_config):
+            return default_config
+        else:
+            return None
+            
+    except json.JSONDecodeError as e:
+        print(f"Error parsing config.json: {e}")
+        return None
+        
+    except Exception as e:
+        print(f"Error loading config: {e}")
         return None
 
 def save_config(config):
