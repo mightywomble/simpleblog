@@ -297,8 +297,21 @@
 
             // --- STATE MANAGEMENT ---
             let allPosts = [];
-            let repositories = JSON.parse(localStorage.getItem('blog_repos')) || [];
-            let isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+            let repositories = [];
+            let isLoggedIn = false;
+            let blogConfig = {};
+            
+            // Check authentication status on load
+            async function checkAuthStatus() {
+                try {
+                    const response = await fetch('/api/auth/status');
+                    const data = await response.json();
+                    isLoggedIn = data.authenticated;
+                } catch (error) {
+                    console.error('Error checking auth status:', error);
+                    isLoggedIn = false;
+                }
+            }
 
             // --- SECURITY (Password Management) ---
             // NOTE: Storing passwords in localStorage is NOT secure for production.
@@ -550,7 +563,8 @@
 
                 if (username === ADMIN_USERNAME && password === currentAdminPassword) {
                     isLoggedIn = true;
-                    sessionStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('loginTimestamp', Date.now().toString());
                     hideAdminLogin();
 
                     if (currentAdminPassword === DEFAULT_PASSWORD) {
