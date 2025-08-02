@@ -104,79 +104,115 @@ os.makedirs(IMAGE_CACHE_DIR, exist_ok=True)
 # Initialize Gemini API
 def init_gemini():
     """Initialize Gemini API with API key from config or environment"""
+    logging.info("🔑 Starting Gemini API initialization")
+    
     # First try to get from config
     config = load_config()
     api_key = None
     
     if config and config.get('gemini_api_key'):
         api_key = config['gemini_api_key']
-        print(f"API key found in config: Yes")
+        logging.info("✅ API key found in config file")
     else:
         # Fall back to environment variable
         api_key = os.environ.get('GEMINI_API_KEY')
-        print(f"API key found in environment: {'Yes' if api_key else 'No'}")
+        logging.info(f"Environment variable check: {'✅ Found' if api_key else '❌ Not found'}")
     
     if api_key:
-        print(f"API key starts with: {api_key[:10]}...")
-        genai.configure(api_key=api_key)
-        print("Gemini API configured successfully")
-        return True
-    print("No GEMINI_API_KEY found in config or environment variables")
+        logging.info(f"🔐 API key loaded (starts with: {api_key[:10]}...)")
+        try:
+            genai.configure(api_key=api_key)
+            logging.info("✅ Gemini API configured successfully")
+            return True
+        except Exception as e:
+            logging.error(f"❌ Failed to configure Gemini API: {e}")
+            return False
+    
+    logging.warning("❌ No GEMINI_API_KEY found in config or environment variables")
     return False
 
 def generate_article_image(title, content_preview=""):
     """Generate an image for a blog article using Gemini Imagen"""
+    logging.info(f"🖼️ Starting image generation for: '{title}'")
+    
     try:
         if not init_gemini():
-            print("Gemini API key not configured")
+            logging.warning("❌ Gemini API key not configured, returning None")
             return None
-        print(f"Starting image generation for: {title}")
         
+        logging.info("✅ Gemini API initialized successfully")
             
         # Create a hash for the title to use as filename
         title_hash = hashlib.md5(title.encode()).hexdigest()
         image_path = os.path.join(IMAGE_CACHE_DIR, f"{title_hash}.png")
+        logging.info(f"📁 Image will be saved to: {image_path}")
         
         # Check if image already exists
         if os.path.exists(image_path):
+            logging.info("♻️ Image already exists, returning cached version")
             return f"/static/generated_images/{title_hash}.png"
         
         # Use Gemini Imagen API to generate the image
-        print("Creating Gemini client...")
-        client = genai.Client()
+        logging.info("🤖 Creating Gemini client...")
+        try:
+            client = genai.Client()
+            logging.info("✅ Gemini client created successfully")
+        except Exception as e:
+            logging.error(f"❌ Failed to create Gemini client: {e}")
+            return None
 
         # Create a concise prompt using only the title
         prompt = f"Create a visually appealing thumbnail image for a blog post titled '{title}'. Style: modern, clean, professional, suitable for a tech/development blog."
+        logging.info(f"📝 Using prompt: {prompt[:100]}...")
 
         # Send request to Gemini's Imagen model
-        print("Sending request to Imagen API...")
-        response = client.models.generate_images(
-            model='imagen-4.0-generate-preview-06-06',
-            prompt=prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
+        logging.info("🚀 Sending request to Imagen API...")
+        try:
+            response = client.models.generate_images(
+                model='imagen-4.0-generate-preview-06-06',
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    number_of_images=1,
+                )
             )
-        )
+            logging.info("✅ Received response from Imagen API")
+        except Exception as e:
+            logging.error(f"❌ Failed to call Imagen API: {e}")
+            return None
 
-        print("Processing Imagen response...")
+        logging.info("🔍 Processing Imagen response...")
         if response.generated_images:
+            logging.info(f"📸 Got {len(response.generated_images)} generated images")
+            
             # Get the first generated image
             generated_image = response.generated_images[0]
             image_bytes = generated_image.image.image_bytes
+            logging.info(f"💾 Image data size: {len(image_bytes) if image_bytes else 'None'} bytes")
+            
+            if not image_bytes:
+                logging.error("❌ No image bytes in response")
+                return None
             
             # Convert base64 to image and save
-            image_data = base64.b64decode(image_bytes)
-            image = Image.open(BytesIO(image_data))
-            image.save(image_path, 'PNG')
-            print(f"Generated and saved image for: {title}")
-            return f"/static/generated_images/{title_hash}.png"
+            try:
+                image_data = base64.b64decode(image_bytes)
+                logging.info(f"🔄 Decoded base64 data: {len(image_data)} bytes")
+                
+                image = Image.open(BytesIO(image_data))
+                image.save(image_path, 'PNG')
+                logging.info(f"✅ Generated and saved image for: '{title}'")
+                return f"/static/generated_images/{title_hash}.png"
+            except Exception as e:
+                logging.error(f"❌ Failed to decode/save image: {e}")
+                return None
         else:
-            print(f"No images generated for: {title}")
+            logging.warning(f"❌ No images generated for: '{title}'")
             return None
         
     except Exception as e:
-        print(f"Error generating image for '{title}': {e}")
-        print(f"Image generation completed for: {title}")
+        logging.error(f"❌ Unexpected error generating image for '{title}': {e}")
+        import traceback
+        logging.error(f"📋 Full traceback: {traceback.format_exc()}")
         return None
 
 def get_placeholder_image(title):
@@ -630,36 +666,37 @@ def track_article_visit():
 @require_auth
 def generate_image_endpoint():
     """Generate an image for a blog post"""
-    print("\n" + "="*50)
-    print("🔥 GENERATE IMAGE ENDPOINT CALLED 🔥")
-    print("🔥 THIS IS THE NEW CODE WITH DEBUG 🔥")
-    print("="*50 + "\n")
+    logging.info("\n" + "="*50)
+    logging.info("🔥 GENERATE IMAGE ENDPOINT CALLED 🔥")
+    logging.info("🔥 THIS IS THE NEW CODE WITH ENHANCED LOGGING 🔥")
+    logging.info("="*50 + "\n")
+    
     data = request.get_json()
-    print(f"📋 Request data: {data}")
+    logging.info(f"📋 Request data: {data}")
     
     if not data or not data.get('title'):
-        print("ERROR: No title provided")
+        logging.error("❌ ERROR: No title provided in request")
         return jsonify({'error': 'Title required'}), 400
     
     title = data['title']
     content_preview = data.get('content', '')
-    print(f"Generating image for title: {title}")
+    logging.info(f"🎯 Generating image for title: '{title}'")
     
     # Try to generate with Gemini first, fall back to placeholder
-    print("Calling generate_article_image...")
+    logging.info("📞 Calling generate_article_image function...")
     image_url = generate_article_image(title, content_preview)
-    print(f"generate_article_image returned: {image_url}")
+    logging.info(f"↩️ generate_article_image returned: {image_url}")
     
     if not image_url:
-        print("Gemini generation failed, falling back to placeholder...")
+        logging.warning("⚠️ Gemini generation failed, falling back to placeholder...")
         image_url = get_placeholder_image(title)
-        print(f"Placeholder image URL: {image_url}")
+        logging.info(f"🔄 Placeholder image URL: {image_url}")
     
     if image_url:
-        print(f"Returning success with image_url: {image_url}")
+        logging.info(f"✅ Returning success with image_url: {image_url}")
         return jsonify({'success': True, 'image_url': image_url})
     else:
-        print("ERROR: Both Gemini and placeholder generation failed")
+        logging.error("❌ ERROR: Both Gemini and placeholder generation failed")
         return jsonify({'error': 'Failed to generate image'}), 500
 
 @app.route('/api/generate-images-batch', methods=['POST'])
