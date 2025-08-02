@@ -12,8 +12,7 @@ import sqlite3
 from threading import Lock
 import base64
 import logging
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from PIL import Image
 from io import BytesIO
 
@@ -152,61 +151,39 @@ def generate_article_image(title, content_preview=""):
             logging.info("♻️ Image already exists, returning cached version")
             return f"/static/generated_images/{title_hash}.png"
         
-        # Use Gemini Imagen API to generate the image
-        logging.info("🤖 Creating Gemini client...")
+        # Use Gemini text generation to create image descriptions (Imagen is not available via the API)
+        logging.info("🤖 Creating Gemini model for text generation...")
         try:
-            client = genai.Client()
-            logging.info("✅ Gemini client created successfully")
+            model = genai.GenerativeModel('gemini-pro')
+            logging.info("✅ Gemini text model created successfully")
         except Exception as e:
-            logging.error(f"❌ Failed to create Gemini client: {e}")
+            logging.error(f"❌ Failed to create Gemini model: {e}")
             return None
 
-        # Create a concise prompt using only the title
-        prompt = f"Create a visually appealing thumbnail image for a blog post titled '{title}'. Style: modern, clean, professional, suitable for a tech/development blog."
+        # Create a prompt to generate an image description
+        prompt = f"Create a detailed visual description for a thumbnail image for a blog post titled '{title}'. Describe colors, composition, and visual elements that would make an appealing tech blog thumbnail. Keep it concise but vivid."
         logging.info(f"📝 Using prompt: {prompt[:100]}...")
 
-        # Send request to Gemini's Imagen model
-        logging.info("🚀 Sending request to Imagen API...")
+        # Generate description using Gemini
+        logging.info("🚀 Sending request to Gemini text API...")
         try:
-            response = client.models.generate_images(
-                model='imagen-4.0-generate-preview-06-06',
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    number_of_images=1,
-                )
-            )
-            logging.info("✅ Received response from Imagen API")
+            response = model.generate_content(prompt)
+            description = response.text
+            logging.info(f"✅ Received description from Gemini: {description[:100]}...")
         except Exception as e:
-            logging.error(f"❌ Failed to call Imagen API: {e}")
+            logging.error(f"❌ Failed to call Gemini API: {e}")
             return None
 
-        logging.info("🔍 Processing Imagen response...")
-        if response.generated_images:
-            logging.info(f"📸 Got {len(response.generated_images)} generated images")
-            
-            # Get the first generated image
-            generated_image = response.generated_images[0]
-            image_bytes = generated_image.image.image_bytes
-            logging.info(f"💾 Image data size: {len(image_bytes) if image_bytes else 'None'} bytes")
-            
-            if not image_bytes:
-                logging.error("❌ No image bytes in response")
-                return None
-            
-            # Convert base64 to image and save
-            try:
-                image_data = base64.b64decode(image_bytes)
-                logging.info(f"🔄 Decoded base64 data: {len(image_data)} bytes")
-                
-                image = Image.open(BytesIO(image_data))
-                image.save(image_path, 'PNG')
-                logging.info(f"✅ Generated and saved image for: '{title}'")
-                return f"/static/generated_images/{title_hash}.png"
-            except Exception as e:
-                logging.error(f"❌ Failed to decode/save image: {e}")
-                return None
-        else:
-            logging.warning(f"❌ No images generated for: '{title}'")
+        # For now, we'll create an enhanced placeholder with the AI description
+        # In the future, this could be used with other image generation services
+        logging.info("🔍 Creating enhanced placeholder with AI description...")
+        try:
+            enhanced_image_url = create_enhanced_placeholder(title, description)
+            if enhanced_image_url:
+                logging.info(f"✅ Created enhanced placeholder image")
+                return enhanced_image_url
+        except Exception as e:
+            logging.error(f"❌ Failed to create enhanced placeholder: {e}")
             return None
         
     except Exception as e:
@@ -253,6 +230,98 @@ def get_placeholder_image(title):
         
     except Exception as e:
         print(f"Error creating placeholder image for '{title}': {e}")
+        return None
+
+def create_enhanced_placeholder(title, ai_description):
+    """Create an enhanced placeholder with AI-generated description elements"""
+    try:
+        title_hash = hashlib.md5((title + ai_description).encode()).hexdigest()
+        image_path = os.path.join(IMAGE_CACHE_DIR, f"enhanced_{title_hash}.svg")
+        
+        # Check if enhanced placeholder already exists
+        if os.path.exists(image_path):
+            return f"/static/generated_images/enhanced_{title_hash}.svg"
+        
+        # Extract color themes from AI description (simple keyword matching)
+        description_lower = ai_description.lower()
+        
+        # Default colors
+        primary_hue = int(title_hash[:3], 16) % 360
+        secondary_hue = (primary_hue + 120) % 360
+        
+        # Adjust colors based on description keywords
+        if 'blue' in description_lower or 'ocean' in description_lower or 'sky' in description_lower:
+            primary_hue = 210
+        elif 'green' in description_lower or 'nature' in description_lower or 'forest' in description_lower:
+            primary_hue = 120
+        elif 'red' in description_lower or 'fire' in description_lower or 'energy' in description_lower:
+            primary_hue = 0
+        elif 'purple' in description_lower or 'violet' in description_lower:
+            primary_hue = 270
+        elif 'orange' in description_lower or 'sunset' in description_lower:
+            primary_hue = 30
+        
+        # Adjust saturation and lightness based on description mood
+        saturation = 70
+        lightness = 50
+        
+        if 'bright' in description_lower or 'vibrant' in description_lower:
+            saturation = 85
+        elif 'dark' in description_lower or 'shadow' in description_lower:
+            lightness = 30
+        elif 'light' in description_lower or 'soft' in description_lower:
+            lightness = 70
+            saturation = 50
+        
+        # Create more sophisticated SVG with patterns
+        pattern_elements = ''
+        if 'tech' in description_lower or 'digital' in description_lower or 'code' in description_lower:
+            pattern_elements = f'''
+            <circle cx="350" cy="50" r="30" fill="hsla({primary_hue}, 50%, 80%, 0.3)" />
+            <rect x="320" y="30" width="60" height="40" fill="none" stroke="hsla({primary_hue}, 50%, 80%, 0.5)" stroke-width="2" rx="5" />
+            <path d="M30 150 Q50 130 70 150 T110 150" fill="none" stroke="hsla({secondary_hue}, 60%, 70%, 0.4)" stroke-width="3" />
+            '''
+        elif 'abstract' in description_lower or 'geometric' in description_lower:
+            pattern_elements = f'''
+            <polygon points="50,50 80,30 110,50 80,70" fill="hsla({primary_hue}, 60%, 70%, 0.4)" />
+            <circle cx="320" cy="160" r="25" fill="hsla({secondary_hue}, 50%, 60%, 0.3)" />
+            <rect x="300" y="50" width="40" height="40" fill="hsla({primary_hue}, 40%, 80%, 0.3)" transform="rotate(45 320 70)" />
+            '''
+        
+        svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:hsl({primary_hue}, {saturation}%, {lightness + 10}%);stop-opacity:1" />
+      <stop offset="50%" style="stop-color:hsl({secondary_hue}, {saturation - 10}%, {lightness}%);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:hsl({primary_hue}, {saturation}%, {lightness - 10}%);stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="overlayGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.2);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0);stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#mainGrad)" />
+  <rect width="400" height="200" fill="url(#overlayGrad)" />
+  {pattern_elements}
+  <rect x="20" y="20" width="360" height="160" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="1" rx="10" />
+  <text x="200" y="95" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white" opacity="0.95">
+    {title[:45]}{'...' if len(title) > 45 else ''}
+  </text>
+  <text x="200" y="125" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="rgba(255,255,255,0.7)">
+    AI-Enhanced
+  </text>
+</svg>'''
+        
+        # Save the enhanced SVG file
+        with open(image_path, 'w', encoding='utf-8') as f:
+            f.write(svg_content)
+        
+        logging.info(f"Created enhanced placeholder with themes from: {ai_description[:50]}...")
+        return f"/static/generated_images/enhanced_{title_hash}.svg"
+        
+    except Exception as e:
+        logging.error(f"Error creating enhanced placeholder for '{title}': {e}")
         return None
 
 # Initialize the Flask application
