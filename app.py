@@ -671,6 +671,9 @@ def index():
     track_visit('homepage')
     return render_template('index.html')
 
+print("🚀 FLASK APP STARTING WITH NEW CODE - VERSION 2.0 🚀")
+print("🔧 Debug mode enabled, image generation configured")
+
 if __name__ == '__main__':
     # Runs the app on a local development server.
     # Debug=True allows for automatic reloading when changes are made.
