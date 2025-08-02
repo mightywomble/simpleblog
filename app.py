@@ -92,15 +92,25 @@ os.makedirs(IMAGE_CACHE_DIR, exist_ok=True)
 
 # Initialize Gemini API
 def init_gemini():
-    """Initialize Gemini API with API key from environment"""
-    api_key = os.environ.get('GEMINI_API_KEY')
-    print(f"API key found: {'Yes' if api_key else 'No'}")
+    """Initialize Gemini API with API key from config or environment"""
+    # First try to get from config
+    config = load_config()
+    api_key = None
+    
+    if config and config.get('gemini_api_key'):
+        api_key = config['gemini_api_key']
+        print(f"API key found in config: Yes")
+    else:
+        # Fall back to environment variable
+        api_key = os.environ.get('GEMINI_API_KEY')
+        print(f"API key found in environment: {'Yes' if api_key else 'No'}")
+    
     if api_key:
         print(f"API key starts with: {api_key[:10]}...")
         genai.configure(api_key=api_key)
         print("Gemini API configured successfully")
         return True
-    print("No GEMINI_API_KEY found in environment variables")
+    print("No GEMINI_API_KEY found in config or environment variables")
     return False
 
 def generate_article_image(title, content_preview=""):
@@ -342,7 +352,8 @@ def get_config():
         'blog_name': config.get('blog_name', 'My Blog'),
         'admin_username': config.get('admin_username', 'admin'),
         'repositories': config.get('repositories', []),
-        'session_timeout_hours': config.get('session_timeout_hours', 24)
+        'session_timeout_hours': config.get('session_timeout_hours', 24),
+        'has_gemini_api_key': bool(config.get('gemini_api_key'))
     }
     return jsonify(safe_config)
 
@@ -388,6 +399,30 @@ def change_password():
     
     # Update password
     config['admin_password_hash'] = generate_password_hash(new_password)
+    
+    if save_config(config):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Failed to save configuration'}), 500
+
+@app.route('/api/config/gemini-api-key', methods=['POST'])
+@require_auth
+def set_gemini_api_key():
+    """Set Gemini API key"""
+    data = request.get_json()
+    if not data or not data.get('api_key'):
+        return jsonify({'error': 'API key required'}), 400
+    
+    config = load_config()
+    if not config:
+        return jsonify({'error': 'Configuration error'}), 500
+    
+    api_key = data['api_key'].strip()
+    if len(api_key) < 10:  # Basic validation
+        return jsonify({'error': 'API key appears to be too short'}), 400
+    
+    # Update API key
+    config['gemini_api_key'] = api_key
     
     if save_config(config):
         return jsonify({'success': True})
