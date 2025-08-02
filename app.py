@@ -94,9 +94,13 @@ os.makedirs(IMAGE_CACHE_DIR, exist_ok=True)
 def init_gemini():
     """Initialize Gemini API with API key from environment"""
     api_key = os.environ.get('GEMINI_API_KEY')
+    print(f"API key found: {'Yes' if api_key else 'No'}")
     if api_key:
+        print(f"API key starts with: {api_key[:10]}...")
         genai.configure(api_key=api_key)
+        print("Gemini API configured successfully")
         return True
+    print("No GEMINI_API_KEY found in environment variables")
     return False
 
 def generate_article_image(title, content_preview=""):
@@ -105,6 +109,8 @@ def generate_article_image(title, content_preview=""):
         if not init_gemini():
             print("Gemini API key not configured")
             return None
+        print(f"Starting image generation for: {title}")
+        
             
         # Create a hash for the title to use as filename
         title_hash = hashlib.md5(title.encode()).hexdigest()
@@ -115,11 +121,13 @@ def generate_article_image(title, content_preview=""):
             return f"/static/generated_images/{title_hash}.png"
         
         # Use Gemini API to generate the image
+        print("Creating Gemini client...")
         client = genai.Client()
 
         contents = f"Create an image for a blog post titled: {title}, visually appealing for a modern tech blog."
 
         # Send request to Gemini's image generation model
+        print("Sending request to Gemini API...")
         response = client.models.generate_content(
             model="gemini-2.0-flash-preview-image-generation",
             contents=[contents],
@@ -128,6 +136,7 @@ def generate_article_image(title, content_preview=""):
             )
         )
 
+        print("Processing response...")
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
                 image = Image.open(BytesIO(base64.b64decode(part.inline_data.data)))
@@ -140,6 +149,7 @@ def generate_article_image(title, content_preview=""):
         
     except Exception as e:
         print(f"Error generating image for '{title}': {e}")
+        print(f"Image generation completed for: {title}")
         return None
 
 def get_placeholder_image(title):
