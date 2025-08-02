@@ -11,7 +11,10 @@ from collections import defaultdict, Counter
 import sqlite3
 from threading import Lock
 import base64
-import google.generativeai as genai
+from google import genai
+from google.genai import types
+from PIL import Image
+from io import BytesIO
 
 # Configuration file path
 CONFIG_FILE = 'config.json'
@@ -111,54 +114,29 @@ def generate_article_image(title, content_preview=""):
         if os.path.exists(image_path):
             return f"/static/generated_images/{title_hash}.png"
         
-        # Try to use Imagen 3.0 through Gemini API for image generation
-        try:
-            model = genai.GenerativeModel('gemini-1.5-pro-latest')
-            
-            # Create a simple but effective prompt for image generation
-            prompt = f"Create an image for a blog post titled: {title}"
-            
-            # Try using the newer imagen generation if available
-            # Note: This is using the newer Gemini API structure for image generation
-            response = genai.ImageGenerationModel('imagen-3.0-generate-001').generate_images(
-                prompt=prompt,
-                number_of_images=1,
-                safety_filter_level="block_few",
-                person_generation="allow_adult"
+        # Use Gemini API to generate the image
+        client = genai.Client()
+
+        contents = f"Create an image for a blog post titled: {title}, visually appealing for a modern tech blog."
+
+        # Send request to Gemini's image generation model
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-preview-image-generation",
+            contents=[contents],
+            config=types.GenerateContentConfig(
+                response_modalities=['TEXT', 'IMAGE']
             )
-            
-            if response.images:
-                # Save the generated image
-                image_data = response.images[0]._pil_image
-                image_data.save(image_path, 'PNG')
-                print(f"Successfully generated image for: {title}")
+        )
+
+        for part in response.candidates[0].content.parts:
+            if part.inline_data is not None:
+                image = Image.open(BytesIO(base64.b64decode(part.inline_data.data)))
+                image.save(image_path, 'PNG')
+                print(f"Generated and saved image for: {title}")
                 return f"/static/generated_images/{title_hash}.png"
-            else:
-                print(f"No images generated for: {title}")
-                return None
-                
-        except AttributeError:
-            # If Imagen model is not available, try alternative approach
-            print(f"Imagen model not available, trying alternative approach for: {title}")
-            
-            # Use a different approach - try to generate through the newer API
-            try:
-                import requests
-                import base64
-                
-                # This would be the direct API call to Google's Imagen if available
-                api_key = os.environ.get('GEMINI_API_KEY')
-                if not api_key:
-                    return None
-                    
-                # For now, return None since direct Imagen API might not be accessible
-                # Users will get placeholder images instead
-                print(f"Image generation not yet available for: {title}")
-                return None
-                
-            except Exception as inner_e:
-                print(f"Alternative image generation failed for '{title}': {inner_e}")
-                return None
+
+        print(f"No image part found for: {title}")
+        return None
         
     except Exception as e:
         print(f"Error generating image for '{title}': {e}")
