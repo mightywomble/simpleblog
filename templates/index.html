@@ -211,6 +211,62 @@
                 <button id="admin-panel-close" class="text-gray-500 hover:text-gray-800 text-4xl">&times;</button>
             </div>
 
+            <!-- Analytics Stats Section -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold mb-4">Analytics Overview</h3>
+                <div id="analytics-container">
+                    <button id="load-analytics-btn" class="bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 mb-4">
+                        Load Analytics Data
+                    </button>
+                    <div id="analytics-data" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-blue-600" id="total-hits">0</div>
+                                <div class="text-sm text-gray-600">Total Hits</div>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-green-600" id="unique-visitors">0</div>
+                                <div class="text-sm text-gray-600">Unique Visitors</div>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-purple-600" id="top-article-views">0</div>
+                                <div class="text-sm text-gray-600">Top Article Views</div>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-orange-600" id="countries-count">0</div>
+                                <div class="text-sm text-gray-600">Countries</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Top Articles -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-gray-800">Top Articles</h4>
+                                <div id="top-articles-list" class="space-y-2 max-h-64 overflow-y-auto">
+                                    <!-- Articles will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Top Countries -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-3 text-gray-800">Top Countries</h4>
+                                <div id="top-countries-list" class="space-y-2 max-h-64 overflow-y-auto">
+                                    <!-- Countries will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Activity Chart -->
+                        <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-gray-800">Recent Activity (Last 30 Days)</h4>
+                            <div id="daily-stats-chart" class="h-64 overflow-x-auto">
+                                <!-- Chart will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
                     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -299,6 +355,16 @@
             const blogNameInput = document.getElementById('blog-name-input');
             const blogTitleElement = document.querySelector('header h1');
             const changePasswordForm = document.getElementById('change-password-form');
+            // Analytics elements
+            const loadAnalyticsBtn = document.getElementById('load-analytics-btn');
+            const analyticsData = document.getElementById('analytics-data');
+            const totalHitsEl = document.getElementById('total-hits');
+            const uniqueVisitorsEl = document.getElementById('unique-visitors');
+            const topArticleViewsEl = document.getElementById('top-article-views');
+            const countriesCountEl = document.getElementById('countries-count');
+            const topArticlesList = document.getElementById('top-articles-list');
+            const topCountriesList = document.getElementById('top-countries-list');
+            const dailyStatsChart = document.getElementById('daily-stats-chart');
 
             // --- STATE MANAGEMENT ---
             let allPosts = [];
@@ -757,6 +823,100 @@
                 }
             }
 
+            // --- ANALYTICS FUNCTIONS ---
+            async function loadAnalytics() {
+                loadAnalyticsBtn.disabled = true;
+                loadAnalyticsBtn.textContent = 'Loading...';
+                
+                try {
+                    const response = await fetch('/api/analytics/stats');
+                    if (response.ok) {
+                        const data = await response.json();
+                        renderAnalytics(data);
+                        analyticsData.classList.remove('hidden');
+                        loadAnalyticsBtn.textContent = 'Refresh Analytics';
+                    } else {
+                        const errorData = await response.json();
+                        alert(errorData.error || 'Failed to load analytics');
+                        loadAnalyticsBtn.textContent = 'Load Analytics Data';
+                    }
+                } catch (error) {
+                    console.error('Error loading analytics:', error);
+                    alert('Failed to load analytics. Please try again.');
+                    loadAnalyticsBtn.textContent = 'Load Analytics Data';
+                } finally {
+                    loadAnalyticsBtn.disabled = false;
+                }
+            }
+
+            function renderAnalytics(data) {
+                // Update summary cards
+                totalHitsEl.textContent = data.total_hits || 0;
+                uniqueVisitorsEl.textContent = data.unique_visitors || 0;
+                topArticleViewsEl.textContent = data.top_articles?.[0]?.views || 0;
+                countriesCountEl.textContent = data.top_countries?.length || 0;
+                
+                // Render top articles
+                topArticlesList.innerHTML = '';
+                if (data.top_articles && data.top_articles.length > 0) {
+                    data.top_articles.forEach(article => {
+                        const articleEl = document.createElement('div');
+                        articleEl.className = 'flex justify-between items-center p-2 bg-white rounded border';
+                        articleEl.innerHTML = `
+                            <div class="flex-1">
+                                <div class="font-medium text-sm truncate" title="${article.article}">${article.article}</div>
+                                <div class="text-xs text-gray-500">${article.countries.join(', ')}</div>
+                            </div>
+                            <div class="text-sm font-semibold text-blue-600">${article.views}</div>
+                        `;
+                        topArticlesList.appendChild(articleEl);
+                    });
+                } else {
+                    topArticlesList.innerHTML = '<div class="text-gray-500 text-sm">No article data available</div>';
+                }
+                
+                // Render top countries
+                topCountriesList.innerHTML = '';
+                if (data.top_countries && data.top_countries.length > 0) {
+                    data.top_countries.forEach(country => {
+                        const countryEl = document.createElement('div');
+                        countryEl.className = 'flex justify-between items-center p-2 bg-white rounded border';
+                        countryEl.innerHTML = `
+                            <div class="font-medium text-sm">${country.country}</div>
+                            <div class="text-sm font-semibold text-green-600">${country.visits}</div>
+                        `;
+                        topCountriesList.appendChild(countryEl);
+                    });
+                } else {
+                    topCountriesList.innerHTML = '<div class="text-gray-500 text-sm">No country data available</div>';
+                }
+                
+                // Render daily stats chart (simple bar chart)
+                dailyStatsChart.innerHTML = '';
+                if (data.daily_stats && data.daily_stats.length > 0) {
+                    const maxVisits = Math.max(...data.daily_stats.map(d => d.visits));
+                    const chartContainer = document.createElement('div');
+                    chartContainer.className = 'flex items-end space-x-1 h-full';
+                    
+                    data.daily_stats.reverse().forEach(day => {
+                        const barHeight = maxVisits > 0 ? (day.visits / maxVisits) * 200 : 0;
+                        const bar = document.createElement('div');
+                        bar.className = 'bg-indigo-500 rounded-t flex-1 min-w-0 relative group cursor-pointer';
+                        bar.style.height = `${barHeight}px`;
+                        bar.innerHTML = `
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                ${day.date}: ${day.visits} visits
+                            </div>
+                        `;
+                        chartContainer.appendChild(bar);
+                    });
+                    
+                    dailyStatsChart.appendChild(chartContainer);
+                } else {
+                    dailyStatsChart.innerHTML = '<div class="text-gray-500 text-sm flex items-center justify-center h-full">No recent activity data available</div>';
+                }
+            }
+
             // --- INITIALIZATION ---
             async function init() {
                 // Always load public config first (available to all visitors)
@@ -812,6 +972,8 @@
                 repoListContainer.addEventListener('click', removeRepo);
                 scanBtn.addEventListener('click', scanForArticles);
                 blogNameForm.addEventListener('submit', handleBlogNameUpdate);
+                // Analytics listener
+                loadAnalyticsBtn.addEventListener('click', loadAnalytics);
             }
 
             init();
