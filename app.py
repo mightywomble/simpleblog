@@ -36,7 +36,7 @@ ANALYTICS_DB = 'analytics.db'
 db_lock = Lock()
 
 def init_db():
-    """Initialize the analytics database"""
+    """Initialize the analytics database and articles database"""
     with db_lock:
         conn = sqlite3.connect(ANALYTICS_DB)
         cursor = conn.cursor()
@@ -50,6 +50,21 @@ def init_db():
                 article TEXT,
                 country TEXT,
                 user_agent TEXT
+            )
+        ''')
+        
+        # Create table for storing articles data
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS articles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                tag TEXT,
+                repo TEXT,
+                path TEXT UNIQUE,
+                image_url TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
@@ -96,6 +111,91 @@ def track_visit(article=None):
         print(f"Error tracking visit: {e}")
 
 init_db()
+
+# Article database functions
+def save_articles_to_db(articles):
+    """Save or update articles in the database"""
+    try:
+        with db_lock:
+            conn = sqlite3.connect(ANALYTICS_DB)
+            cursor = conn.cursor()
+            
+            for article in articles:
+                # Use INSERT OR REPLACE to handle both new and existing articles
+                cursor.execute('''
+                    INSERT OR REPLACE INTO articles 
+                    (title, content, tag, repo, path, image_url, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    article['title'],
+                    article['content'],
+                    article['tag'],
+                    article['repo'],
+                    article['path'],
+                    article.get('imageUrl'),
+                    datetime.now().isoformat()
+                ))
+            
+            conn.commit()
+            conn.close()
+            logging.info(f"✅ Saved {len(articles)} articles to database")
+            return True
+    except Exception as e:
+        logging.error(f"❌ Failed to save articles to database: {e}")
+        return False
+
+def get_articles_from_db():
+    """Retrieve all articles from the database"""
+    try:
+        with db_lock:
+            conn = sqlite3.connect(ANALYTICS_DB)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT title, content, tag, repo, path, image_url
+                FROM articles
+                ORDER BY updated_at DESC
+            ''')
+            
+            articles = []
+            for row in cursor.fetchall():
+                articles.append({
+                    'title': row[0],
+                    'content': row[1],
+                    'tag': row[2],
+                    'repo': row[3],
+                    'path': row[4],
+                    'imageUrl': row[5],
+                    'likes': 0  # Likes are still stored in localStorage for now
+                })
+            
+            conn.close()
+            logging.info(f"✅ Retrieved {len(articles)} articles from database")
+            return articles
+    except Exception as e:
+        logging.error(f"❌ Failed to retrieve articles from database: {e}")
+        return []
+
+def update_article_image_in_db(path, image_url):
+    """Update the image URL for a specific article in the database"""
+    try:
+        with db_lock:
+            conn = sqlite3.connect(ANALYTICS_DB)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                UPDATE articles 
+                SET image_url = ?, updated_at = ?
+                WHERE path = ?
+            ''', (image_url, datetime.now().isoformat(), path))
+            
+            conn.commit()
+            conn.close()
+            logging.info(f"✅ Updated image URL for article at path: {path}")
+            return True
+    except Exception as e:
+        logging.error(f"❌ Failed to update article image in database: {e}")
+        return False
 
 # Image cache directory
 IMAGE_CACHE_DIR = 'static/generated_images'
@@ -532,6 +632,25 @@ def require_auth(f):
         
         return f(*args, **kwargs)
     return decorated_function
+
+# API Route to get articles
+@app.route('/api/articles', methods=['GET'])
+def get_articles():
+    articles = get_articles_from_db()
+    return jsonify(articles)
+
+# API Route to save articles
+@app.route('/api/save-articles', methods=['POST'])
+@require_auth
+def save_articles():
+    data = request.get_json()
+    if not data or not isinstance(data, list):
+        return jsonify({'error': 'Articles array required'}), 400
+    
+    if save_articles_to_db(data):
+        return jsonify({'success': True, 'count': len(data)})
+    else:
+        return jsonify({'error': 'Failed to save articles'}), 500
 
 # API Routes
 @app.route('/api/login', methods=['POST'])

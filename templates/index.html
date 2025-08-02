@@ -728,7 +728,21 @@
                     newAllPosts = newAllPosts.concat(posts);
                 }
                 allPosts = newAllPosts;
-                localStorage.setItem('blog_posts', JSON.stringify(allPosts));
+                
+                // Save articles to server database
+                try {
+                    const saveResponse = await fetch('/api/save-articles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(allPosts)
+                    });
+                    if (saveResponse.ok) {
+                        console.log('Articles saved to database successfully');
+                    }
+                } catch (error) {
+                    console.error('Failed to save articles to database:', error);
+                }
+                
                 // Generate images for articles without images
                 for (let post of allPosts) {
                     if (!post.imageUrl) {
@@ -807,8 +821,19 @@
                     }
                 }
 
-                // Update localStorage with new image URLs
-                localStorage.setItem('blog_posts', JSON.stringify(allPosts));
+                // Save updated articles to server database
+                try {
+                    const saveResponse = await fetch('/api/save-articles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(allPosts)
+                    });
+                    if (saveResponse.ok) {
+                        console.log('Updated articles saved to database');
+                    }
+                } catch (error) {
+                    console.error('Failed to save updated articles:', error);
+                }
                 
                 // Re-render posts to show new images
                 renderPosts(allPosts);
@@ -1217,22 +1242,30 @@
                     await loadConfig();
                 }
 
-                // Load initial data
-                const cachedPosts = JSON.parse(localStorage.getItem('blog_posts'));
-                if (cachedPosts && cachedPosts.length > 0) {
-                    allPosts = cachedPosts;
-                    renderPosts(allPosts);
-                } else if (repositories.length > 0) {
-                    scanForArticles();
-                } else {
-                    renderPosts([]);
-                }
+// Load articles from the server database
+async function loadArticles() {
+    try {
+        const response = await fetch('/api/articles');
+        if (response.ok) {
+            const data = await response.json();
+            allPosts = data;
+            renderPosts(allPosts);
+        } else {
+            console.error('Failed to load articles:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('Error loading articles:', error);
+    }
+}
 
                 updateBlogName();
                 renderRepos();
 
-                // Event Listeners
-                searchInput.addEventListener('input', handleSearch);
+                // Load articles on initial page load
+                loadArticles();
+
+ // Event Listeners
+searchInput.addEventListener('input', handleSearch);
                 blogPostsContainer.addEventListener('click', (e) => {
                     handleLike(e);
                     handleShare(e);
