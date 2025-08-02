@@ -12,7 +12,12 @@ import sqlite3
 from threading import Lock
 import base64
 import logging
-import google.generativeai as genai
+try:
+    # Prefer the newer gemini-2.5-flash module
+    import google.generativeai as genai
+except ImportError:
+    # Fallback to older google module
+    import google.generativeai as genai
 from PIL import Image
 from io import BytesIO
 import openai
@@ -154,7 +159,7 @@ def get_articles_from_db():
             cursor.execute('''
                 SELECT title, content, tag, repo, path, image_url
                 FROM articles
-                ORDER BY updated_at DESC
+                ORDER BY created_at DESC, updated_at DESC
             ''')
             
             articles = []
