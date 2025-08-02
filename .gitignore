@@ -1,0 +1,12 @@
+# Local configuration files
+config.json
+
+# Python cache
+__pycache__/
+
+# Static assets (if they are built/generated)
+static/
+
+# Log files
+debug.log
+
