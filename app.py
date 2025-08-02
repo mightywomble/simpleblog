@@ -131,8 +131,8 @@ def init_gemini():
     logging.warning("❌ No GEMINI_API_KEY found in config or environment variables")
     return False
 
-def init_openai():
-    """Initialize OpenAI API with API key from config or environment"""
+def get_openai_client():
+    """Get OpenAI client with API key from config or environment"""
     logging.info("🔑 Starting OpenAI API initialization")
     
     # First try to get from config
@@ -150,22 +150,24 @@ def init_openai():
     if api_key:
         logging.info(f"🔐 OpenAI API key loaded (starts with: {api_key[:10]}...)")
         try:
-            openai.api_key = api_key
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
             logging.info("✅ OpenAI API configured successfully")
-            return True
+            return client
         except Exception as e:
             logging.error(f"❌ Failed to configure OpenAI API: {e}")
-            return False
+            return None
     
     logging.warning("❌ No OPENAI_API_KEY found in config or environment variables")
-    return False
+    return None
 
 def generate_image_with_openai(title, content_preview=""):
     """Generate an actual image using OpenAI DALL-E"""
     logging.info(f"🎨 Starting OpenAI DALL-E image generation for: '{title}'")
     
     try:
-        if not init_openai():
+        client = get_openai_client()
+        if not client:
             logging.warning("❌ OpenAI API key not configured")
             return None
         
@@ -188,7 +190,6 @@ def generate_image_with_openai(title, content_preview=""):
         
         # Generate image with DALL-E
         logging.info("🚀 Sending request to OpenAI DALL-E API...")
-        client = openai.OpenAI(api_key=openai.api_key)
         
         response = client.images.generate(
             model="dall-e-3",
