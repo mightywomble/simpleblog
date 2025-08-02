@@ -523,9 +523,19 @@
             // --- GITHUB API ---
             const converter = new showdown.Converter();
 
-            async function fetchFromGitHub(url) {
+            async function fetchFromGitHub(url, bustCache = false) {
                 try {
-                    const response = await fetch(url);
+                    // Add cache-busting parameter to force fresh data
+                    const fetchUrl = bustCache ? `${url}${url.includes('?') ? '&' : '?'}_cb=${Date.now()}` : url;
+                    
+                    const response = await fetch(fetchUrl, {
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    
                     if (!response.ok) {
                         throw new Error(`GitHub API request failed: ${response.statusText}`);
                     }
@@ -537,12 +547,13 @@
                 }
             }
 
-            async function getArticlesFromRepo(repoName) {
+            async function getArticlesFromRepo(repoName, bustCache = false) {
                 const posts = [];
                 try {
-                    const contents = await fetchFromGitHub(`https://api.github.com/repos/${repoName}/contents`);
+                    console.log(`Fetching from repo: ${repoName} (bust cache: ${bustCache})`);
+                    const contents = await fetchFromGitHub(`https://api.github.com/repos/${repoName}/contents`, bustCache);
                      if (!contents) return []; // If fetch failed, return empty array
-                    await Promise.all(contents.map(item => processRepoItem(item, repoName, posts)));
+                    await Promise.all(contents.map(item => processRepoItem(item, repoName, posts, '', bustCache)));
                 } catch (error) {
                     console.error(`Error fetching from repo ${repoName}:`, error);
                     alert(`Failed to fetch articles from ${repoName}. Check the repository path and permissions.`);
@@ -550,15 +561,25 @@
                 return posts;
             }
 
-            async function processRepoItem(item, repoName, posts, currentPath = '') {
+            async function processRepoItem(item, repoName, posts, currentPath = '', bustCache = false) {
                 const path = currentPath ? `${currentPath}/${item.name}` : item.name;
                 if (item.type === 'dir') {
-                    const contents = await fetchFromGitHub(item.url);
+                    const contents = await fetchFromGitHub(item.url, bustCache);
                      if (!contents) return;
-                    await Promise.all(contents.map(newItem => processRepoItem(newItem, repoName, posts, path)));
+                    await Promise.all(contents.map(newItem => processRepoItem(newItem, repoName, posts, path, bustCache)));
                 } else if (item.name.endsWith('.md') && item.download_url) {
                     try {
-                        const response = await fetch(item.download_url);
+                        // Add cache-busting for file content as well
+                        const fileUrl = bustCache ? `${item.download_url}?_cb=${Date.now()}` : item.download_url;
+                        console.log(`Fetching file: ${path} (bust cache: ${bustCache})`);
+                        
+                        const response = await fetch(fileUrl, {
+                            headers: bustCache ? {
+                                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                            } : {}
+                        });
                         const fileContent = await response.text();
 
                         // Use the filename as a fallback title
@@ -741,7 +762,7 @@
 
                 let newAllPosts = [];
                 for (const repo of repositories) {
-                    const posts = await getArticlesFromRepo(repo);
+                    const posts = await getArticlesFromRepo(repo, false); // Regular scan doesn't bust cache
                     newAllPosts = newAllPosts.concat(posts);
                 }
                 allPosts = newAllPosts;
@@ -811,11 +832,11 @@
                     allPosts = [];
                     renderPosts(allPosts);
 
-                    // Now scan all repositories fresh
+                    // Now scan all repositories fresh with cache busting
                     let newAllPosts = [];
                     for (const repo of repositories) {
-                        console.log(`Scanning repository: ${repo}`);
-                        const posts = await getArticlesFromRepo(repo);
+                        console.log(`Rescanning repository: ${repo} (with cache busting)`);
+                        const posts = await getArticlesFromRepo(repo, true); // Force cache busting for rescan
                         newAllPosts = newAllPosts.concat(posts);
                     }
                     allPosts = newAllPosts;
