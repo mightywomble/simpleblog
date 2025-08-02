@@ -11,7 +11,8 @@ from collections import defaultdict, Counter
 import sqlite3
 from threading import Lock
 import base64
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from PIL import Image
 from io import BytesIO
 
@@ -129,18 +130,38 @@ def generate_article_image(title, content_preview=""):
         if os.path.exists(image_path):
             return f"/static/generated_images/{title_hash}.png"
         
-        # Use Gemini API to generate the image
-        print("Creating Gemini model...")
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Use Gemini Imagen API to generate the image
+        print("Creating Gemini client...")
+        client = genai.Client()
 
         # Create a concise prompt using only the title
         prompt = f"Create a visually appealing thumbnail image for a blog post titled '{title}'. Style: modern, clean, professional, suitable for a tech/development blog."
 
-        # Send request to Gemini's text generation (image generation via Imagen is not directly available in this library)
-        # For now, we'll fall back to placeholder since Gemini doesn't directly support image generation in this way
-        print("Note: Gemini text-to-image generation not available with current library")
-        print(f"Would generate image for: {title}")
-        return None
+        # Send request to Gemini's Imagen model
+        print("Sending request to Imagen API...")
+        response = client.models.generate_images(
+            model='imagen-4.0-generate-preview-06-06',
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+            )
+        )
+
+        print("Processing Imagen response...")
+        if response.generated_images:
+            # Get the first generated image
+            generated_image = response.generated_images[0]
+            image_bytes = generated_image.image.image_bytes
+            
+            # Convert base64 to image and save
+            image_data = base64.b64decode(image_bytes)
+            image = Image.open(BytesIO(image_data))
+            image.save(image_path, 'PNG')
+            print(f"Generated and saved image for: {title}")
+            return f"/static/generated_images/{title_hash}.png"
+        else:
+            print(f"No images generated for: {title}")
+            return None
         
     except Exception as e:
         print(f"Error generating image for '{title}': {e}")
