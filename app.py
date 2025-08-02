@@ -11,10 +11,21 @@ from collections import defaultdict, Counter
 import sqlite3
 from threading import Lock
 import base64
+import logging
 from google import genai
 from google.genai import types
 from PIL import Image
 from io import BytesIO
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('debug.log'),
+        logging.StreamHandler()
+    ]
+)
 
 # Configuration file path
 CONFIG_FILE = 'config.json'
