@@ -645,7 +645,7 @@
                         const response = await fetch('/api/generate-image', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ title: post.title, content: post.content })
+                            body: JSON.stringify({ title: post.title })
                         });
 
                         if (response.ok) {
@@ -693,7 +693,7 @@
                         const response = await fetch('/api/generate-image', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ title: post.title, content: post.content })
+                            body: JSON.stringify({ title: post.title })
                         });
 
                         console.log('Response status:', response.status);

@@ -124,7 +124,8 @@ def generate_article_image(title, content_preview=""):
         print("Creating Gemini client...")
         client = genai.Client()
 
-        contents = f"Create an image for a blog post titled: {title}, visually appealing for a modern tech blog."
+        # Create a concise prompt using only the title
+        contents = f"Create a visually appealing thumbnail image for a blog post titled '{title}'. Style: modern, clean, professional, suitable for a tech/development blog."
 
         # Send request to Gemini's image generation model
         print("Sending request to Gemini API...")
