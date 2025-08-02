@@ -292,6 +292,10 @@
                                 <span id="scan-btn-text">Scan for New Articles</span>
                                 <span id="scan-spinner" class="hidden animate-spin">&#9696;</span>
                             </button>
+                            <button id="rescan-btn" class="bg-orange-500 text-white py-2 px-6 rounded-lg hover:bg-orange-600 flex items-center justify-center w-full">
+                                <span id="rescan-btn-text">Rescan Repositories</span>
+                                <span id="rescan-spinner" class="hidden animate-spin">&#9696;</span>
+                            </button>
                             <button id="regenerate-images-btn" class="bg-purple-500 text-white py-2 px-6 rounded-lg hover:bg-purple-600 flex items-center justify-center w-full">
                                 <span id="regenerate-btn-text">Regenerate All Images</span>
                                 <span id="regenerate-spinner" class="hidden animate-spin">&#9696;</span>
@@ -431,6 +435,9 @@
             const scanBtn = document.getElementById('scan-btn');
             const scanBtnText = document.getElementById('scan-btn-text');
             const scanSpinner = document.getElementById('scan-spinner');
+            const rescanBtn = document.getElementById('rescan-btn');
+            const rescanBtnText = document.getElementById('rescan-btn-text');
+            const rescanSpinner = document.getElementById('rescan-spinner');
             const regenerateImagesBtn = document.getElementById('regenerate-images-btn');
             const regenerateBtnText = document.getElementById('regenerate-btn-text');
             const regenerateSpinner = document.getElementById('regenerate-spinner');
@@ -774,6 +781,95 @@
                 scanBtn.disabled = false;
                 scanSpinner.classList.add('hidden');
                 scanBtnText.classList.remove('hidden');
+            }
+
+            async function rescanRepositories() {
+                if (!confirm('This will clear ALL existing articles and completely rescan all repositories. This action cannot be undone. Continue?')) {
+                    return;
+                }
+
+                rescanBtn.disabled = true;
+                rescanSpinner.classList.remove('hidden');
+                rescanBtnText.classList.add('hidden');
+
+                try {
+                    // First, clear all existing articles from the database
+                    console.log('Clearing existing articles...');
+                    const clearResponse = await fetch('/api/rescan-articles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (!clearResponse.ok) {
+                        const errorData = await clearResponse.json();
+                        throw new Error(errorData.error || 'Failed to clear articles');
+                    }
+
+                    console.log('Articles cleared, starting fresh scan...');
+                    
+                    // Clear local posts array
+                    allPosts = [];
+                    renderPosts(allPosts);
+
+                    // Now scan all repositories fresh
+                    let newAllPosts = [];
+                    for (const repo of repositories) {
+                        console.log(`Scanning repository: ${repo}`);
+                        const posts = await getArticlesFromRepo(repo);
+                        newAllPosts = newAllPosts.concat(posts);
+                    }
+                    allPosts = newAllPosts;
+                    
+                    console.log(`Found ${allPosts.length} articles total`);
+                    
+                    // Save all articles to server database
+                    if (allPosts.length > 0) {
+                        const saveResponse = await fetch('/api/save-articles', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(allPosts)
+                        });
+                        if (saveResponse.ok) {
+                            console.log('All articles saved to database successfully');
+                        } else {
+                            console.error('Failed to save articles to database');
+                        }
+                    }
+                    
+                    // Generate images for all articles
+                    for (let post of allPosts) {
+                        const response = await fetch('/api/generate-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: post.title })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            post.imageUrl = data.image_url;
+                        }
+                    }
+
+                    // Final save with images
+                    if (allPosts.length > 0) {
+                        await fetch('/api/save-articles', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(allPosts)
+                        });
+                    }
+
+                    renderPosts(allPosts);
+                    alert(`Rescan completed! Found and processed ${allPosts.length} articles.`);
+
+                } catch (error) {
+                    console.error('Rescan failed:', error);
+                    alert(`Rescan failed: ${error.message}`);
+                } finally {
+                    rescanBtn.disabled = false;
+                    rescanSpinner.classList.add('hidden');
+                    rescanBtnText.classList.remove('hidden');
+                }
             }
 
             async function regenerateAllImages() {
@@ -1351,6 +1447,7 @@ searchInput.addEventListener('input', handleSearch);
                 addRepoForm.addEventListener('submit', addRepo);
                 repoListContainer.addEventListener('click', removeRepo);
                 scanBtn.addEventListener('click', scanForArticles);
+                rescanBtn.addEventListener('click', rescanRepositories);
                 regenerateImagesBtn.addEventListener('click', regenerateAllImages);
                 blogNameForm.addEventListener('submit', handleBlogNameUpdate);
                 // OpenAI API listeners

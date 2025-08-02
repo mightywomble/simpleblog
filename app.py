@@ -149,6 +149,23 @@ def save_articles_to_db(articles):
         logging.error(f"❌ Failed to save articles to database: {e}")
         return False
 
+def clear_articles_from_db():
+    """Clear all articles from the database"""
+    try:
+        with db_lock:
+            conn = sqlite3.connect(ANALYTICS_DB)
+            cursor = conn.cursor()
+            
+            cursor.execute('DELETE FROM articles')
+            
+            conn.commit()
+            conn.close()
+            logging.info("✅ Cleared all articles from database")
+            return True
+    except Exception as e:
+        logging.error(f"❌ Failed to clear articles from database: {e}")
+        return False
+
 def get_articles_from_db():
     """Retrieve all articles from the database"""
     try:
@@ -656,6 +673,22 @@ def save_articles():
         return jsonify({'success': True, 'count': len(data)})
     else:
         return jsonify({'error': 'Failed to save articles'}), 500
+
+# API Route to clear and rescan articles
+@app.route('/api/rescan-articles', methods=['POST'])
+@require_auth
+def rescan_articles():
+    """Clear all articles and rescan repositories"""
+    try:
+        # Clear existing articles
+        if not clear_articles_from_db():
+            return jsonify({'error': 'Failed to clear existing articles'}), 500
+        
+        logging.info("🔄 Starting complete rescan of repositories")
+        return jsonify({'success': True, 'message': 'Articles cleared, ready for rescan'})
+    except Exception as e:
+        logging.error(f"❌ Failed to rescan articles: {e}")
+        return jsonify({'error': 'Failed to rescan articles'}), 500
 
 # API Routes
 @app.route('/api/login', methods=['POST'])
