@@ -153,11 +153,41 @@ def generate_article_image(title, content_preview=""):
         
         # Use Gemini text generation to create image descriptions (Imagen is not available via the API)
         logging.info("🤖 Creating Gemini model for text generation...")
-        try:
-            model = genai.GenerativeModel('gemini-pro')
-            logging.info("✅ Gemini text model created successfully")
-        except Exception as e:
-            logging.error(f"❌ Failed to create Gemini model: {e}")
+        
+        # Try different model names that might work (updated for Gemini 2.5)
+        model_names_to_try = [
+            'models/gemini-2.5-flash',
+            'models/gemini-2.5-pro',
+            'gemini-2.5-flash',
+            'gemini-2.5-pro',
+            'models/gemini-1.5-flash',
+            'models/gemini-1.5-pro', 
+            'models/gemini-pro',
+            'gemini-1.5-flash',
+            'gemini-1.5-pro',
+            'gemini-pro'
+        ]
+        
+        model = None
+        for model_name in model_names_to_try:
+            try:
+                logging.info(f"🦪 Trying model: {model_name}")
+                model = genai.GenerativeModel(model_name)
+                logging.info(f"✅ Successfully created model: {model_name}")
+                break
+            except Exception as e:
+                logging.warning(f"⚠️ Model {model_name} failed: {e}")
+                continue
+        
+        if not model:
+            logging.error("❌ Failed to create any Gemini model")
+            # Try to list available models for debugging
+            try:
+                models = genai.list_models()
+                available_models = [m.name for m in models if 'generateContent' in m.supported_generation_methods]
+                logging.info(f"🔍 Available models that support generateContent: {available_models[:5]}")
+            except Exception as model_error:
+                logging.warning(f"⚠️ Could not list models: {str(model_error)}")
             return None
 
         # Create a prompt to generate an image description
@@ -530,24 +560,36 @@ def change_password():
 @require_auth
 def set_gemini_api_key():
     """Set Gemini API key"""
+    logging.info("🔑 SET GEMINI API KEY ENDPOINT CALLED")
+    
     data = request.get_json()
+    logging.info(f"📋 Request data received: {bool(data and data.get('api_key'))}")
+    
     if not data or not data.get('api_key'):
+        logging.error("❌ No API key provided in request")
         return jsonify({'error': 'API key required'}), 400
     
     config = load_config()
     if not config:
+        logging.error("❌ Failed to load config")
         return jsonify({'error': 'Configuration error'}), 500
     
     api_key = data['api_key'].strip()
+    logging.info(f"🔐 API key received (length: {len(api_key)}, starts with: {api_key[:10]}...)")
+    
     if len(api_key) < 10:  # Basic validation
+        logging.error("❌ API key too short")
         return jsonify({'error': 'API key appears to be too short'}), 400
     
     # Update API key
     config['gemini_api_key'] = api_key
+    logging.info("💾 Attempting to save config with API key...")
     
     if save_config(config):
+        logging.info("✅ Config saved successfully with Gemini API key")
         return jsonify({'success': True})
     else:
+        logging.error("❌ Failed to save config")
         return jsonify({'error': 'Failed to save configuration'}), 500
 
 @app.route('/api/repositories', methods=['GET'])
