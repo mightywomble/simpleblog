@@ -10,6 +10,8 @@ from functools import wraps
 from collections import defaultdict, Counter
 import sqlite3
 from threading import Lock
+import base64
+import google.generativeai as genai
 
 # Configuration file path
 CONFIG_FILE = 'config.json'
@@ -80,6 +82,108 @@ def track_visit(article=None):
         print(f"Error tracking visit: {e}")
 
 init_db()
+
+# Image cache directory
+IMAGE_CACHE_DIR = 'static/generated_images'
+os.makedirs(IMAGE_CACHE_DIR, exist_ok=True)
+
+# Initialize Gemini API
+def init_gemini():
+    """Initialize Gemini API with API key from environment"""
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if api_key:
+        genai.configure(api_key=api_key)
+        return True
+    return False
+
+def generate_article_image(title, content_preview=""):
+    """Generate an image for a blog article using Gemini"""
+    try:
+        if not init_gemini():
+            print("Gemini API key not configured")
+            return None
+            
+        # Create a hash for the title to use as filename
+        title_hash = hashlib.md5(title.encode()).hexdigest()
+        image_path = os.path.join(IMAGE_CACHE_DIR, f"{title_hash}.png")
+        
+        # Check if image already exists
+        if os.path.exists(image_path):
+            return f"/static/generated_images/{title_hash}.png"
+        
+        # Generate image using Gemini
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Create a focused prompt for image generation
+        prompt = f"""Create a modern, clean, and visually appealing blog post thumbnail image for an article titled: "{title}"
+        
+        The image should be:
+        - Professional and modern in style
+        - Suitable for a tech/development blog
+        - 1200x630 pixels (social media friendly)
+        - Clean typography if text is included
+        - Relevant to the article topic
+        - Minimalist design with good contrast
+        
+        Content context: {content_preview[:200] if content_preview else 'General tech/development topic'}
+        
+        Style: Modern, clean, professional, suitable for a developer blog."""
+        
+        response = model.generate_content([
+            prompt,
+            "Generate a high-quality thumbnail image for this blog post."
+        ])
+        
+        # Note: Gemini doesn't directly generate images in the current API
+        # This is a placeholder for when image generation becomes available
+        # For now, we'll return a placeholder or use a different approach
+        
+        print(f"Image generation attempted for: {title}")
+        return None  # Return None for now since direct image generation isn't available
+        
+    except Exception as e:
+        print(f"Error generating image for '{title}': {e}")
+        return None
+
+def get_placeholder_image(title):
+    """Generate a simple placeholder image with the article title"""
+    try:
+        title_hash = hashlib.md5(title.encode()).hexdigest()
+        image_path = os.path.join(IMAGE_CACHE_DIR, f"placeholder_{title_hash}.svg")
+        
+        # Check if placeholder already exists
+        if os.path.exists(image_path):
+            return f"/static/generated_images/placeholder_{title_hash}.svg"
+        
+        # Create a simple SVG placeholder
+        # Generate a color based on the title hash
+        color_hash = int(title_hash[:6], 16)
+        hue = color_hash % 360
+        
+        svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:hsl({hue}, 70%, 60%);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:hsl({(hue + 60) % 360}, 70%, 40%);stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#grad1)" />
+  <rect x="20" y="20" width="360" height="160" fill="rgba(255,255,255,0.1)" rx="10" />
+  <text x="200" y="110" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white" opacity="0.9">
+    {title[:50]}{'...' if len(title) > 50 else ''}
+  </text>
+</svg>'''
+        
+        # Save the SVG file
+        with open(image_path, 'w', encoding='utf-8') as f:
+            f.write(svg_content)
+        
+        return f"/static/generated_images/placeholder_{title_hash}.svg"
+        
+    except Exception as e:
+        print(f"Error creating placeholder image for '{title}': {e}")
+        return None
 
 # Initialize the Flask application
 app = Flask(__name__, static_folder='static')
@@ -462,6 +566,59 @@ def track_article_visit():
     track_visit(article)
     
     return jsonify({'success': True})
+
+@app.route('/api/generate-image', methods=['POST'])
+@require_auth
+def generate_image_endpoint():
+    """Generate an image for a blog post"""
+    data = request.get_json()
+    if not data or not data.get('title'):
+        return jsonify({'error': 'Title required'}), 400
+    
+    title = data['title']
+    content_preview = data.get('content', '')
+    
+    # Try to generate with Gemini first, fall back to placeholder
+    image_url = generate_article_image(title, content_preview)
+    if not image_url:
+        image_url = get_placeholder_image(title)
+    
+    if image_url:
+        return jsonify({'success': True, 'image_url': image_url})
+    else:
+        return jsonify({'error': 'Failed to generate image'}), 500
+
+@app.route('/api/generate-images-batch', methods=['POST'])
+@require_auth
+def generate_images_batch():
+    """Generate images for multiple blog posts"""
+    data = request.get_json()
+    if not data or not data.get('articles'):
+        return jsonify({'error': 'Articles array required'}), 400
+    
+    articles = data['articles']
+    results = []
+    
+    for article in articles:
+        if not article.get('title'):
+            continue
+            
+        title = article['title']
+        content_preview = article.get('content', '')
+        
+        # Try to generate with Gemini first, fall back to placeholder
+        image_url = generate_article_image(title, content_preview)
+        if not image_url:
+            image_url = get_placeholder_image(title)
+        
+        results.append({
+            'title': title,
+            'image_url': image_url,
+            'path': article.get('path', ''),
+            'success': image_url is not None
+        })
+    
+    return jsonify({'success': True, 'results': results})
 
 @app.route('/')
 def index():

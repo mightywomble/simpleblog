@@ -482,7 +482,8 @@
                             tag: tag,
                             repo: repoName,
                             path: path,
-                            likes: parseInt(localStorage.getItem(`like_${path}`) || '0')
+                            likes: parseInt(localStorage.getItem(`like_${path}`) || '0'),
+                            imageUrl: null // Will be populated during image generation
                         });
                     } catch (error) {
                         console.warn(`Could not fetch content for ${path}:`, error);
@@ -502,12 +503,13 @@
                     const postCard = document.createElement('div');
                     postCard.className = 'card glass overflow-hidden cursor-pointer';
                     postCard.innerHTML = `
-                        <div class="p-6">
-                            <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">${post.tag}</span>
-                            <h3 class="text-xl font-bold mt-2 mb-2 text-white">${post.title}</h3>
-                            <div class="text-white h-20 overflow-hidden">${truncateHTML(post.content, 100)}</div>
-                        </div>
-                        <div class="p-6 bg-gray-50 flex justify-between items-center">
+                        div class="p-6"
+                            img src="${post.imageUrl || '/static/default-thumbnail.svg'}" alt="${post.title}" class="w-full h-48 object-cover object-center mb-2 rounded-t-lg"
+                            span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"${post.tag}/span
+                            h3 class="text-xl font-bold mt-2 mb-2 text-white"${post.title}/h3
+                            div class="text-white h-20 overflow-hidden"${truncateHTML(post.content, 100)}/div
+                        /div
+                        div class="p-6 bg-gray-50 flex justify-between items-center"
                             <div class="flex space-x-4">
                                 <button data-path="${post.path}" class="like-btn flex items-center space-x-1 text-gray-500 hover:text-red-500">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
@@ -615,6 +617,22 @@
                 }
                 allPosts = newAllPosts;
                 localStorage.setItem('blog_posts', JSON.stringify(allPosts));
+                // Generate images for articles without images
+                for (let post of allPosts) {
+                    if (!post.imageUrl) {
+                        const response = await fetch('/api/generate-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: post.title, content: post.content })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            post.imageUrl = data.image_url;
+                        }
+                    }
+                }
+
                 renderPosts(allPosts);
 
                 scanBtn.disabled = false;
