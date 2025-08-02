@@ -112,7 +112,7 @@ def generate_article_image(title, content_preview=""):
             return f"/static/generated_images/{title_hash}.png"
         
         # Generate image using Gemini
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         # Create a focused prompt for image generation
         prompt = f"""Create a modern, clean, and visually appealing blog post thumbnail image for an article titled: "{title}"
