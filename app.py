@@ -4,8 +4,82 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 import hashlib
+import requests
 from datetime import datetime, timedelta
 from functools import wraps
+from collections import defaultdict, Counter
+import sqlite3
+from threading import Lock
+
+# Configuration file path
+CONFIG_FILE = 'config.json'
+DEFAULT_PASSWORD = 'password'
+ANALYTICS_DB = 'analytics.db'
+
+# Thread lock for database operations
+db_lock = Lock()
+
+def init_db():
+    """Initialize the analytics database"""
+    with db_lock:
+        conn = sqlite3.connect(ANALYTICS_DB)
+        cursor = conn.cursor()
+        
+        # Create table for storing analytics data
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS analytics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                ip_address TEXT,
+                article TEXT,
+                country TEXT,
+                user_agent TEXT
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+
+def get_country_from_ip(ip_address):
+    """Get country from IP address using a free geolocation API"""
+    try:
+        # Use a free IP geolocation service
+        response = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=2)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('country', 'Unknown')
+    except:
+        pass
+    return 'Unknown'
+
+def track_visit(article=None):
+    """Track a visit to the site or specific article"""
+    try:
+        # Get visitor's IP address
+        ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        if ip_address and ',' in ip_address:
+            ip_address = ip_address.split(',')[0].strip()
+        
+        # Get country from IP
+        country = get_country_from_ip(ip_address)
+        
+        # Get user agent
+        user_agent = request.headers.get('User-Agent', '')
+        
+        # Store in database
+        with db_lock:
+            conn = sqlite3.connect(ANALYTICS_DB)
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT INTO analytics (ip_address, article, country, user_agent) VALUES (?, ?, ?, ?)',
+                (ip_address, article, country, user_agent)
+            )
+            conn.commit()
+            conn.close()
+    except Exception as e:
+        print(f"Error tracking visit: {e}")
+
+init_db()
 
 # Initialize the Flask application
 app = Flask(__name__, static_folder='static')
@@ -32,9 +106,6 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(hours=24)
 )
 
-# Configuration file path
-CONFIG_FILE = 'config.json'
-DEFAULT_PASSWORD = 'password'
 
 # Configuration management functions
 def load_config():
@@ -306,11 +377,99 @@ def auth_status():
     
     return jsonify({'authenticated': is_authenticated})
 
+# Analytics endpoints
+@app.route('/api/analytics/stats', methods=['GET'])
+@require_auth
+def get_analytics_stats():
+    """Get comprehensive analytics statistics"""
+    try:
+        with db_lock:
+            conn = sqlite3.connect(ANALYTICS_DB)
+            cursor = conn.cursor()
+            
+            # Total hits
+            cursor.execute('SELECT COUNT(*) FROM analytics')
+            total_hits = cursor.fetchone()[0]
+            
+            # Unique visitors (based on IP)
+            cursor.execute('SELECT COUNT(DISTINCT ip_address) FROM analytics')
+            unique_visitors = cursor.fetchone()[0]
+            
+            # Top 10 articles
+            cursor.execute('''
+                SELECT article, COUNT(*) as views, 
+                       GROUP_CONCAT(DISTINCT country) as countries
+                FROM analytics 
+                WHERE article IS NOT NULL AND article != ''
+                GROUP BY article 
+                ORDER BY views DESC 
+                LIMIT 10
+            ''')
+            top_articles = [{
+                'article': row[0],
+                'views': row[1],
+                'countries': row[2].split(',') if row[2] else []
+            } for row in cursor.fetchall()]
+            
+            # Top 10 countries
+            cursor.execute('''
+                SELECT country, COUNT(*) as visits
+                FROM analytics 
+                WHERE country != 'Unknown'
+                GROUP BY country 
+                ORDER BY visits DESC 
+                LIMIT 10
+            ''')
+            top_countries = [{
+                'country': row[0],
+                'visits': row[1]
+            } for row in cursor.fetchall()]
+            
+            # Recent activity (last 30 days by day)
+            cursor.execute('''
+                SELECT DATE(timestamp) as date, COUNT(*) as visits
+                FROM analytics 
+                WHERE timestamp >= datetime('now', '-30 days')
+                GROUP BY DATE(timestamp)
+                ORDER BY date DESC
+            ''')
+            daily_stats = [{
+                'date': row[0],
+                'visits': row[1]
+            } for row in cursor.fetchall()]
+            
+            conn.close()
+            
+            return jsonify({
+                'total_hits': total_hits,
+                'unique_visitors': unique_visitors,
+                'top_articles': top_articles,
+                'top_countries': top_countries,
+                'daily_stats': daily_stats
+            })
+            
+    except Exception as e:
+        print(f"Error getting analytics: {e}")
+        return jsonify({'error': 'Failed to get analytics'}), 500
+
+@app.route('/api/track', methods=['POST'])
+def track_article_visit():
+    """Track a visit to a specific article"""
+    data = request.get_json()
+    article = data.get('article') if data else None
+    
+    # Track the visit
+    track_visit(article)
+    
+    return jsonify({'success': True})
+
 @app.route('/')
 def index():
     """
     Renders the main blog page.
     """
+    # Track homepage visit
+    track_visit('homepage')
     return render_template('index.html')
 
 if __name__ == '__main__':
