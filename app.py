@@ -97,7 +97,7 @@ def init_gemini():
     return False
 
 def generate_article_image(title, content_preview=""):
-    """Generate an image for a blog article using Gemini"""
+    """Generate an image for a blog article using Gemini Imagen"""
     try:
         if not init_gemini():
             print("Gemini API key not configured")
@@ -111,35 +111,54 @@ def generate_article_image(title, content_preview=""):
         if os.path.exists(image_path):
             return f"/static/generated_images/{title_hash}.png"
         
-        # Generate image using Gemini
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
-        # Create a focused prompt for image generation
-        prompt = f"""Create a modern, clean, and visually appealing blog post thumbnail image for an article titled: "{title}"
-        
-        The image should be:
-        - Professional and modern in style
-        - Suitable for a tech/development blog
-        - 1200x630 pixels (social media friendly)
-        - Clean typography if text is included
-        - Relevant to the article topic
-        - Minimalist design with good contrast
-        
-        Content context: {content_preview[:200] if content_preview else 'General tech/development topic'}
-        
-        Style: Modern, clean, professional, suitable for a developer blog."""
-        
-        response = model.generate_content([
-            prompt,
-            "Generate a high-quality thumbnail image for this blog post."
-        ])
-        
-        # Note: Gemini doesn't directly generate images in the current API
-        # This is a placeholder for when image generation becomes available
-        # For now, we'll return a placeholder or use a different approach
-        
-        print(f"Image generation attempted for: {title}")
-        return None  # Return None for now since direct image generation isn't available
+        # Try to use Imagen 3.0 through Gemini API for image generation
+        try:
+            model = genai.GenerativeModel('gemini-1.5-pro-latest')
+            
+            # Create a simple but effective prompt for image generation
+            prompt = f"Create an image for a blog post titled: {title}"
+            
+            # Try using the newer imagen generation if available
+            # Note: This is using the newer Gemini API structure for image generation
+            response = genai.ImageGenerationModel('imagen-3.0-generate-001').generate_images(
+                prompt=prompt,
+                number_of_images=1,
+                safety_filter_level="block_few",
+                person_generation="allow_adult"
+            )
+            
+            if response.images:
+                # Save the generated image
+                image_data = response.images[0]._pil_image
+                image_data.save(image_path, 'PNG')
+                print(f"Successfully generated image for: {title}")
+                return f"/static/generated_images/{title_hash}.png"
+            else:
+                print(f"No images generated for: {title}")
+                return None
+                
+        except AttributeError:
+            # If Imagen model is not available, try alternative approach
+            print(f"Imagen model not available, trying alternative approach for: {title}")
+            
+            # Use a different approach - try to generate through the newer API
+            try:
+                import requests
+                import base64
+                
+                # This would be the direct API call to Google's Imagen if available
+                api_key = os.environ.get('GEMINI_API_KEY')
+                if not api_key:
+                    return None
+                    
+                # For now, return None since direct Imagen API might not be accessible
+                # Users will get placeholder images instead
+                print(f"Image generation not yet available for: {title}")
+                return None
+                
+            except Exception as inner_e:
+                print(f"Alternative image generation failed for '{title}': {inner_e}")
+                return None
         
     except Exception as e:
         print(f"Error generating image for '{title}': {e}")
