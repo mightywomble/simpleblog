@@ -15,6 +15,7 @@ import logging
 import google.generativeai as genai
 from PIL import Image
 from io import BytesIO
+import openai
 
 # Set up logging
 logging.basicConfig(
@@ -130,28 +131,115 @@ def init_gemini():
     logging.warning("❌ No GEMINI_API_KEY found in config or environment variables")
     return False
 
-def generate_article_image(title, content_preview=""):
-    """Generate an image for a blog article using Gemini Imagen"""
-    logging.info(f"🖼️ Starting image generation for: '{title}'")
+def init_openai():
+    """Initialize OpenAI API with API key from config or environment"""
+    logging.info("🔑 Starting OpenAI API initialization")
+    
+    # First try to get from config
+    config = load_config()
+    api_key = None
+    
+    if config and config.get('openai_api_key'):
+        api_key = config['openai_api_key']
+        logging.info("✅ OpenAI API key found in config file")
+    else:
+        # Fall back to environment variable
+        api_key = os.environ.get('OPENAI_API_KEY')
+        logging.info(f"OpenAI environment variable check: {'✅ Found' if api_key else '❌ Not found'}")
+    
+    if api_key:
+        logging.info(f"🔐 OpenAI API key loaded (starts with: {api_key[:10]}...)")
+        try:
+            openai.api_key = api_key
+            logging.info("✅ OpenAI API configured successfully")
+            return True
+        except Exception as e:
+            logging.error(f"❌ Failed to configure OpenAI API: {e}")
+            return False
+    
+    logging.warning("❌ No OPENAI_API_KEY found in config or environment variables")
+    return False
+
+def generate_image_with_openai(title, content_preview=""):
+    """Generate an actual image using OpenAI DALL-E"""
+    logging.info(f"🎨 Starting OpenAI DALL-E image generation for: '{title}'")
     
     try:
-        if not init_gemini():
-            logging.warning("❌ Gemini API key not configured, returning None")
+        if not init_openai():
+            logging.warning("❌ OpenAI API key not configured")
             return None
         
-        logging.info("✅ Gemini API initialized successfully")
-            
         # Create a hash for the title to use as filename
         title_hash = hashlib.md5(title.encode()).hexdigest()
-        image_path = os.path.join(IMAGE_CACHE_DIR, f"{title_hash}.png")
-        logging.info(f"📁 Image will be saved to: {image_path}")
+        image_path = os.path.join(IMAGE_CACHE_DIR, f"dalle_{title_hash}.png")
+        logging.info(f"📁 DALL-E image will be saved to: {image_path}")
         
         # Check if image already exists
         if os.path.exists(image_path):
-            logging.info("♻️ Image already exists, returning cached version")
-            return f"/static/generated_images/{title_hash}.png"
+            logging.info("♻️ DALL-E image already exists, returning cached version")
+            return f"/static/generated_images/dalle_{title_hash}.png"
         
-        # Use Gemini text generation to create image descriptions (Imagen is not available via the API)
+        # Create a prompt for DALL-E
+        prompt = f"Create a modern, professional blog post thumbnail image for a tech article titled '{title}'. The image should be visually appealing with a clean, minimal design suitable for a technology blog. Use vibrant colors and modern graphics."
+        if content_preview:
+            prompt += f" Context: {content_preview[:200]}"
+        
+        logging.info(f"📝 Using DALL-E prompt: {prompt[:150]}...")
+        
+        # Generate image with DALL-E
+        logging.info("🚀 Sending request to OpenAI DALL-E API...")
+        client = openai.OpenAI(api_key=openai.api_key)
+        
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size="1024x1024",
+            quality="hd",
+            n=1
+        )
+        
+        image_url = response.data[0].url
+        logging.info(f"✅ Received DALL-E image URL: {image_url[:50]}...")
+        
+        # Download and save the image
+        logging.info("💾 Downloading and saving DALL-E image...")
+        image_response = requests.get(image_url, timeout=30)
+        image_response.raise_for_status()
+        
+        with open(image_path, 'wb') as f:
+            f.write(image_response.content)
+        
+        logging.info("✅ DALL-E image downloaded and saved successfully")
+        return f"/static/generated_images/dalle_{title_hash}.png"
+        
+    except Exception as e:
+        logging.error(f"❌ Failed to generate DALL-E image for '{title}': {e}")
+        import traceback
+        logging.error(f"📋 DALL-E error traceback: {traceback.format_exc()}")
+        return None
+
+def generate_article_image(title, content_preview=""):
+    """Generate an image for a blog article using OpenAI DALL-E or Gemini-enhanced placeholders"""
+    logging.info(f"🖼️ Starting image generation for: '{title}'")
+    
+    try:
+        # First, try OpenAI DALL-E for actual image generation
+        logging.info("🎨 Attempting OpenAI DALL-E image generation...")
+        dalle_image_url = generate_image_with_openai(title, content_preview)
+        if dalle_image_url:
+            logging.info(f"✅ Successfully generated DALL-E image: {dalle_image_url}")
+            return dalle_image_url
+        
+        logging.info("⚠️ DALL-E generation failed or unavailable, trying Gemini-enhanced placeholder...")
+        
+        # Fall back to Gemini-enhanced placeholder
+        if not init_gemini():
+            logging.warning("❌ Gemini API key not configured, using basic placeholder")
+            return get_placeholder_image(title)
+        
+        logging.info("✅ Gemini API initialized successfully")
+        
+        # Use Gemini text generation to create image descriptions
         logging.info("🤖 Creating Gemini model for text generation...")
         
         # Try different model names that might work (updated for Gemini 2.5)
@@ -180,15 +268,8 @@ def generate_article_image(title, content_preview=""):
                 continue
         
         if not model:
-            logging.error("❌ Failed to create any Gemini model")
-            # Try to list available models for debugging
-            try:
-                models = genai.list_models()
-                available_models = [m.name for m in models if 'generateContent' in m.supported_generation_methods]
-                logging.info(f"🔍 Available models that support generateContent: {available_models[:5]}")
-            except Exception as model_error:
-                logging.warning(f"⚠️ Could not list models: {str(model_error)}")
-            return None
+            logging.error("❌ Failed to create any Gemini model, using basic placeholder")
+            return get_placeholder_image(title)
 
         # Create a prompt to generate an image description
         prompt = f"Create a detailed visual description for a thumbnail image for a blog post titled '{title}'. Describe colors, composition, and visual elements that would make an appealing tech blog thumbnail. Keep it concise but vivid."
@@ -202,10 +283,9 @@ def generate_article_image(title, content_preview=""):
             logging.info(f"✅ Received description from Gemini: {description[:100]}...")
         except Exception as e:
             logging.error(f"❌ Failed to call Gemini API: {e}")
-            return None
+            return get_placeholder_image(title)
 
-        # For now, we'll create an enhanced placeholder with the AI description
-        # In the future, this could be used with other image generation services
+        # Create an enhanced placeholder with the AI description
         logging.info("🔍 Creating enhanced placeholder with AI description...")
         try:
             enhanced_image_url = create_enhanced_placeholder(title, description)
@@ -214,13 +294,13 @@ def generate_article_image(title, content_preview=""):
                 return enhanced_image_url
         except Exception as e:
             logging.error(f"❌ Failed to create enhanced placeholder: {e}")
-            return None
+            return get_placeholder_image(title)
         
     except Exception as e:
         logging.error(f"❌ Unexpected error generating image for '{title}': {e}")
         import traceback
         logging.error(f"📋 Full traceback: {traceback.format_exc()}")
-        return None
+        return get_placeholder_image(title)
 
 def get_placeholder_image(title):
     """Generate a simple placeholder image with the article title"""
@@ -504,7 +584,8 @@ def get_config():
         'admin_username': config.get('admin_username', 'admin'),
         'repositories': config.get('repositories', []),
         'session_timeout_hours': config.get('session_timeout_hours', 24),
-        'has_gemini_api_key': bool(config.get('gemini_api_key'))
+        'has_gemini_api_key': bool(config.get('gemini_api_key')),
+        'has_openai_api_key': bool(config.get('openai_api_key'))
     }
     return jsonify(safe_config)
 
@@ -587,6 +668,42 @@ def set_gemini_api_key():
     
     if save_config(config):
         logging.info("✅ Config saved successfully with Gemini API key")
+        return jsonify({'success': True})
+    else:
+        logging.error("❌ Failed to save config")
+        return jsonify({'error': 'Failed to save configuration'}), 500
+
+@app.route('/api/config/openai-api-key', methods=['POST'])
+@require_auth
+def set_openai_api_key():
+    """Set OpenAI API key"""
+    logging.info("🔑 SET OPENAI API KEY ENDPOINT CALLED")
+    
+    data = request.get_json()
+    logging.info(f"📋 Request data received: {bool(data and data.get('api_key'))}")
+    
+    if not data or not data.get('api_key'):
+        logging.error("❌ No API key provided in request")
+        return jsonify({'error': 'API key required'}), 400
+    
+    config = load_config()
+    if not config:
+        logging.error("❌ Failed to load config")
+        return jsonify({'error': 'Configuration error'}), 500
+    
+    api_key = data['api_key'].strip()
+    logging.info(f"🔐 OpenAI API key received (length: {len(api_key)}, starts with: {api_key[:10]}...)")
+    
+    if len(api_key) < 10:  # Basic validation
+        logging.error("❌ API key too short")
+        return jsonify({'error': 'API key appears to be too short'}), 400
+    
+    # Update API key
+    config['openai_api_key'] = api_key
+    logging.info("💾 Attempting to save config with OpenAI API key...")
+    
+    if save_config(config):
+        logging.info("✅ Config saved successfully with OpenAI API key")
         return jsonify({'success': True})
     else:
         logging.error("❌ Failed to save config")
