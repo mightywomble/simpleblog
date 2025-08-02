@@ -614,9 +614,12 @@ def track_article_visit():
 @require_auth
 def generate_image_endpoint():
     """Generate an image for a blog post"""
-    print("=== GENERATE IMAGE ENDPOINT CALLED ===")
+    print("\n" + "="*50)
+    print("🔥 GENERATE IMAGE ENDPOINT CALLED 🔥")
+    print("🔥 THIS IS THE NEW CODE WITH DEBUG 🔥")
+    print("="*50 + "\n")
     data = request.get_json()
-    print(f"Request data: {data}")
+    print(f"📋 Request data: {data}")
     
     if not data or not data.get('title'):
         print("ERROR: No title provided")
