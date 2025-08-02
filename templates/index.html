@@ -663,15 +663,21 @@
             }
 
             async function regenerateAllImages() {
+                console.log('=== REGENERATE ALL IMAGES CALLED ===');
+                console.log('All posts:', allPosts);
+                
                 if (allPosts.length === 0) {
+                    console.log('No posts found');
                     alert('No articles found. Please scan for articles first.');
                     return;
                 }
 
                 if (!confirm(`This will regenerate images for all ${allPosts.length} articles. This may take some time. Continue?`)) {
+                    console.log('User cancelled regeneration');
                     return;
                 }
 
+                console.log('Starting regeneration process...');
                 regenerateImagesBtn.disabled = true;
                 regenerateSpinner.classList.remove('hidden');
                 regenerateBtnText.classList.add('hidden');
@@ -679,16 +685,21 @@
                 regenerateProgress.classList.remove('hidden');
                 let regeneratedCount = 0;
                 const totalPosts = allPosts.length;
+                
                 for (let post of allPosts) {
+                    console.log(`Processing post: ${post.title}`);
                     try {
+                        console.log('Sending request to /api/generate-image...');
                         const response = await fetch('/api/generate-image', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ title: post.title, content: post.content })
                         });
 
+                        console.log('Response status:', response.status);
                         if (response.ok) {
                             const data = await response.json();
+                            console.log('Response data:', data);
                             post.imageUrl = data.image_url;
                             regeneratedCount++;
 
@@ -696,6 +707,10 @@
                             progressText.textContent = `Regenerating images...`;
                             progressCount.textContent = `${regeneratedCount}/${totalPosts}`;
                             progressBar.style.width = `${(regeneratedCount / totalPosts) * 100}%`;
+                        } else {
+                            console.error('API request failed:', response.status, response.statusText);
+                            const errorData = await response.json().catch(() => null);
+                            console.error('Error data:', errorData);
                         }
                     } catch (error) {
                         console.error(`Failed to regenerate image for \"${post.title}\":`, error);

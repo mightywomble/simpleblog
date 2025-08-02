@@ -578,21 +578,33 @@ def track_article_visit():
 @require_auth
 def generate_image_endpoint():
     """Generate an image for a blog post"""
+    print("=== GENERATE IMAGE ENDPOINT CALLED ===")
     data = request.get_json()
+    print(f"Request data: {data}")
+    
     if not data or not data.get('title'):
+        print("ERROR: No title provided")
         return jsonify({'error': 'Title required'}), 400
     
     title = data['title']
     content_preview = data.get('content', '')
+    print(f"Generating image for title: {title}")
     
     # Try to generate with Gemini first, fall back to placeholder
+    print("Calling generate_article_image...")
     image_url = generate_article_image(title, content_preview)
+    print(f"generate_article_image returned: {image_url}")
+    
     if not image_url:
+        print("Gemini generation failed, falling back to placeholder...")
         image_url = get_placeholder_image(title)
+        print(f"Placeholder image URL: {image_url}")
     
     if image_url:
+        print(f"Returning success with image_url: {image_url}")
         return jsonify({'success': True, 'image_url': image_url})
     else:
+        print("ERROR: Both Gemini and placeholder generation failed")
         return jsonify({'error': 'Failed to generate image'}), 500
 
 @app.route('/api/generate-images-batch', methods=['POST'])
