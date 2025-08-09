@@ -3,3 +3,6 @@ Werkzeug==2.3.7
 google-generativeai
 Pillow>=8.0.0
 requests>=2.25.0
+openai>=1.0.0
+# Bluesky/ActivityPub integration
+cryptography>=3.0.0  # For ActivityPub signing

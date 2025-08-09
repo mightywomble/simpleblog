@@ -398,6 +398,250 @@
                             <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Save API Key</button>
                         </form>
                     </div>
+
+                    <!-- Bluesky Integration Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <div class="flex items-center mb-4">
+                            <svg class="w-6 h-6 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <h3 class="text-xl font-semibold">🦋 Bluesky Integration</h3>
+                        </div>
+                        
+                        <!-- Status Display -->
+                        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm font-medium text-gray-700">Status:</span>
+                                        <span id="bluesky-status" class="px-2 py-1 rounded-full text-xs font-medium">Checking...</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="text-sm text-gray-600">Handle:</span>
+                                        <span id="bluesky-handle-display" class="text-sm font-mono">Not configured</span>
+                                    </div>
+                                </div>
+                                <button id="test-bluesky-connection" class="bg-blue-500 text-white py-1 px-3 rounded text-sm hover:bg-blue-600 disabled:opacity-50" disabled>
+                                    Test Connection
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Form -->
+                        <form id="bluesky-config-form">
+                            <div class="mb-4">
+                                <label for="bluesky-handle" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Bluesky Handle
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="bluesky-handle" placeholder="username.bsky.social" 
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Your Bluesky username (e.g., yourname.bsky.social or your custom domain)
+                                </p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="bluesky-app-password" class="block text-sm font-medium text-gray-700 mb-2">
+                                    App Password
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="bluesky-app-password" placeholder="Enter your Bluesky app password" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm pr-10 focus:ring-blue-500 focus:border-blue-500" required>
+                                    <button type="button" id="toggle-bluesky-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <svg id="bluesky-eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        <svg id="bluesky-eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    ⚠️ <strong>Not your account password!</strong> Create an app password in Bluesky settings.
+                                </p>
+                            </div>
+
+                            <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mb-4">
+                                Save Bluesky Configuration
+                            </button>
+                        </form>
+
+                        <!-- Setup Instructions -->
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="text-sm font-medium text-yellow-800">Setup Instructions</h4>
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <ol class="list-decimal list-inside space-y-1">
+                                            <li>Go to <a href="https://bsky.app/settings/app-passwords" target="_blank" class="text-blue-600 hover:underline font-medium">Bluesky App Passwords</a></li>
+                                            <li>Click "Add App Password"</li>
+                                            <li>Name it "SimpleBlog" or similar</li>
+                                            <li>Copy the generated password and paste it above</li>
+                                            <li>Save your configuration and test the connection</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cross-posting Actions -->
+                        <div id="bluesky-actions" class="hidden">
+                            <div class="border-t pt-4">
+                                <h4 class="font-medium text-gray-900 mb-3">🚀 Cross-posting Actions</h4>
+                                <div class="space-y-2">
+                                    <button id="post-latest-article-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 flex items-center justify-center">
+                                        <span id="post-latest-text">Post Latest Article to Bluesky</span>
+                                        <span id="post-latest-spinner" class="hidden animate-spin ml-2">⏳</span>
+                                    </button>
+                                    <button id="bulk-post-articles-btn" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 flex items-center justify-center">
+                                        <span id="bulk-post-text">Post All Recent Articles</span>
+                                        <span id="bulk-post-spinner" class="hidden animate-spin ml-2">⏳</span>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    💡 Tip: After posting, you can track engagement stats for each article!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fediverse/Mastodon Integration Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <div class="flex items-center mb-4">
+                            <svg class="w-6 h-6 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.594 3.681.433 1.934 1.178 3.676 2.37 5.183 1.207 1.529 2.809 2.471 4.668 2.886 1.16.258 2.354.196 3.518.084 2.102-.2 4.002-.914 5.6-2.314.08-.07.155-.145.22-.225.9-1.1 1.505-2.378 1.837-3.744.264-1.084.42-2.19.420-3.327 0-.249-.007-.497-.019-.744-.024-.477-.058-.952-.108-1.426-.025-.234-.06-.467-.101-.698-.082-.463-.2-.917-.367-1.357-.334-.882-.814-1.714-1.443-2.447-.629-.733-1.392-1.36-2.243-1.877-.426-.259-.873-.482-1.347-.67-.237-.094-.48-.176-.728-.248-.496-.144-1.006-.218-1.516-.218-.17 0-.341.008-.511.024-.34.032-.675.08-1.004.144-.33.064-.654.144-.97.24-.316.096-.625.208-.925.336-.6.256-1.17.58-1.686.964-.516.384-.976.818-1.363 1.295-.387.477-.698 1-.915 1.554-.217.554-.338 1.138-.338 1.732 0 .594.121 1.178.338 1.732.217.554.528 1.077.915 1.554.387.477.847.911 1.363 1.295.516.384 1.086.708 1.686.964.3.128.609.24.925.336.316.096.64.176.97.24.329.064.664.112 1.004.144.17.016.341.024.511.024.51 0 1.02-.074 1.516-.218.248-.072.491-.154.728-.248.474-.188.921-.411 1.347-.67.851-.517 1.614-1.144 2.243-1.877.629-.733 1.109-1.565 1.443-2.447.167-.44.285-.894.367-1.357.041-.231.076-.464.101-.698.05-.474.084-.949.108-1.426.012-.247.019-.495.019-.744 0-1.137-.156-2.243-.42-3.327-.332-1.366-.937-2.644-1.837-3.744-.065-.08-.14-.155-.22-.225-1.598-1.4-3.498-2.114-5.6-2.314-1.164-.112-2.358-.174-3.518.084-1.859.415-3.461 1.357-4.668 2.886-1.192 1.507-1.937 3.249-2.37 5.183-.269 1.211-.476 2.441-.594 3.681-.172 1.866-.186 3.737-.26 5.611-.051 1.306-.021 2.731.256 4.016.579 2.609 2.965 4.435 5.608 4.824.453.067 1.308.309 5.288.309h.03c3.979 0 5.697-.242 6.15-.309 2.687-.394 4.954-2.426 5.304-5.004.63-4.639.63-4.639.63-4.639s0-5.21-.63-9.849z"/>
+                            </svg>
+                            <h3 class="text-xl font-semibold">🐘 Fediverse Integration</h3>
+                        </div>
+                        
+                        <!-- Status Display -->
+                        <div class="mb-4 p-4 bg-purple-50 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm font-medium text-gray-700">Status:</span>
+                                        <span id="fediverse-status" class="px-2 py-1 rounded-full text-xs font-medium">Checking...</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="text-sm text-gray-600">Instance:</span>
+                                        <span id="fediverse-instance-display" class="text-sm font-mono">Not configured</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="text-sm text-gray-600">Username:</span>
+                                        <span id="fediverse-username-display" class="text-sm font-mono">Not configured</span>
+                                    </div>
+                                </div>
+                                <button id="test-fediverse-connection" class="bg-purple-500 text-white py-1 px-3 rounded text-sm hover:bg-purple-600 disabled:opacity-50" disabled>
+                                    Test Connection
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Form -->
+                        <form id="fediverse-config-form">
+                            <div class="mb-4">
+                                <label for="fediverse-instance" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Mastodon/Fediverse Instance URL
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input type="url" id="fediverse-instance" placeholder="https://mastodon.social" 
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500" required>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Your Mastodon instance URL (e.g., https://mastodon.social, https://fosstodon.org)
+                                </p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="fediverse-username" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Username
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="fediverse-username" placeholder="your_username" 
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500" required>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Your username without the @ symbol or instance domain
+                                </p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="fediverse-access-token" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Access Token
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="fediverse-access-token" placeholder="Enter your access token" 
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm pr-10 focus:ring-purple-500 focus:border-purple-500" required>
+                                    <button type="button" id="toggle-fediverse-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <svg id="fediverse-eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        <svg id="fediverse-eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    ⚠️ <strong>Keep this secure!</strong> Generate an access token in your instance's developer settings.
+                                </p>
+                            </div>
+
+                            <button type="submit" class="w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 mb-4">
+                                Save Fediverse Configuration
+                            </button>
+                        </form>
+
+                        <!-- Setup Instructions -->
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="text-sm font-medium text-yellow-800">Setup Instructions</h4>
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <ol class="list-decimal list-inside space-y-1">
+                                            <li>Go to your Mastodon instance (e.g. mastodon.social/settings/applications)</li>
+                                            <li>Click "New Application" or "Development"</li>
+                                            <li>Name it "SimpleBlog" and set scopes to "write:statuses"</li>
+                                            <li>Copy your instance URL, username, and access token above</li>
+                                            <li>Save your configuration and test the connection</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cross-posting Actions -->
+                        <div id="fediverse-actions" class="hidden">
+                            <div class="border-t pt-4">
+                                <h4 class="font-medium text-gray-900 mb-3">🚀 Cross-posting Actions</h4>
+                                <div class="space-y-2">
+                                    <button id="post-latest-article-fediverse-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 flex items-center justify-center">
+                                        <span id="post-latest-fediverse-text">Post Latest Article to Fediverse</span>
+                                        <span id="post-latest-fediverse-spinner" class="hidden animate-spin ml-2">⏳</span>
+                                    </button>
+                                    <button id="bulk-post-articles-fediverse-btn" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 flex items-center justify-center">
+                                        <span id="bulk-post-fediverse-text">Post All Recent Articles</span>
+                                        <span id="bulk-post-fediverse-spinner" class="hidden animate-spin ml-2">⏳</span>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    💡 Tip: Posts will include hashtags and links back to your blog!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -469,6 +713,30 @@
             const topArticlesList = document.getElementById('top-articles-list');
             const topCountriesList = document.getElementById('top-countries-list');
             const dailyStatsChart = document.getElementById('daily-stats-chart');
+            // Bluesky elements
+            const blueskyConfigForm = document.getElementById('bluesky-config-form');
+            const blueskyHandleInput = document.getElementById('bluesky-handle');
+            const blueskyAppPasswordInput = document.getElementById('bluesky-app-password');
+            const blueskyStatusElement = document.getElementById('bluesky-status');
+            const blueskyHandleDisplay = document.getElementById('bluesky-handle-display');
+            const testBlueskyConnectionBtn = document.getElementById('test-bluesky-connection');
+            const toggleBlueskyPasswordBtn = document.getElementById('toggle-bluesky-password');
+            const blueskyActions = document.getElementById('bluesky-actions');
+            const postLatestArticleBtn = document.getElementById('post-latest-article-btn');
+            const bulkPostArticlesBtn = document.getElementById('bulk-post-articles-btn');
+            // Fediverse elements
+            const fediverseConfigForm = document.getElementById('fediverse-config-form');
+            const fediverseInstanceInput = document.getElementById('fediverse-instance');
+            const fediverseUsernameInput = document.getElementById('fediverse-username');
+            const fediverseAccessTokenInput = document.getElementById('fediverse-access-token');
+            const fediverseStatusElement = document.getElementById('fediverse-status');
+            const fediverseInstanceDisplay = document.getElementById('fediverse-instance-display');
+            const fediverseUsernameDisplay = document.getElementById('fediverse-username-display');
+            const testFediverseConnectionBtn = document.getElementById('test-fediverse-connection');
+            const toggleFediversePasswordBtn = document.getElementById('toggle-fediverse-password');
+            const fediverseActions = document.getElementById('fediverse-actions');
+            const postLatestArticleFediverseBtn = document.getElementById('post-latest-article-fediverse-btn');
+            const bulkPostArticlesFediverseBtn = document.getElementById('bulk-post-articles-fediverse-btn');
 
             // --- STATE MANAGEMENT ---
             let allPosts = [];
@@ -514,6 +782,8 @@
                         renderRepos();
                         updateGeminiStatus();
                         updateOpenaiStatus();
+                        updateBlueskyStatus();
+                        updateFediverseStatus();
                     }
                 } catch (error) {
                     console.error('Error loading config:', error);
@@ -1367,6 +1637,423 @@
                 }
             }
 
+            // --- BLUESKY FUNCTIONS ---
+            function updateBlueskyStatus() {
+                if (blogConfig.has_bluesky_credentials) {
+                    blueskyStatusElement.textContent = 'Configured';
+                    blueskyStatusElement.className = 'px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                    blueskyHandleDisplay.textContent = blogConfig.bluesky_handle;
+                    testBlueskyConnectionBtn.disabled = false;
+                    blueskyActions.classList.remove('hidden');
+                    
+                    // Pre-populate form with current handle
+                    if (blueskyHandleInput && blogConfig.bluesky_handle) {
+                        blueskyHandleInput.value = blogConfig.bluesky_handle;
+                    }
+                } else {
+                    blueskyStatusElement.textContent = 'Not Configured';
+                    blueskyStatusElement.className = 'px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                    blueskyHandleDisplay.textContent = 'Not configured';
+                    testBlueskyConnectionBtn.disabled = true;
+                    blueskyActions.classList.add('hidden');
+                }
+            }
+
+            async function handleBlueskyConfigSubmit(e) {
+                e.preventDefault();
+                const handle = blueskyHandleInput.value.trim();
+                const appPassword = blueskyAppPasswordInput.value.trim();
+                
+                if (!handle || !appPassword) {
+                    alert('Please enter both handle and app password');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/config/bluesky', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ handle, app_password: appPassword })
+                    });
+
+                    if (response.ok) {
+                        blogConfig.has_bluesky_credentials = true;
+                        blogConfig.bluesky_handle = handle;
+                        updateBlueskyStatus();
+                        alert('Bluesky configuration saved successfully!');
+                        blueskyAppPasswordInput.value = ''; // Clear password field
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to save Bluesky configuration');
+                    }
+                } catch (error) {
+                    alert('Failed to save Bluesky configuration. Please try again.');
+                }
+            }
+
+            async function testBlueskyConnection() {
+                testBlueskyConnectionBtn.disabled = true;
+                const originalText = testBlueskyConnectionBtn.textContent;
+                testBlueskyConnectionBtn.textContent = 'Testing...';
+                
+                try {
+                    const response = await fetch('/api/bluesky/test-connection', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(data.message || 'Bluesky connection successful!');
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to connect to Bluesky');
+                    }
+                } catch (error) {
+                    alert('Failed to test Bluesky connection. Please try again.');
+                } finally {
+                    testBlueskyConnectionBtn.disabled = false;
+                    testBlueskyConnectionBtn.textContent = originalText;
+                }
+            }
+
+            async function postLatestArticleToBluesky() {
+                if (allPosts.length === 0) {
+                    alert('No articles found. Please scan for articles first.');
+                    return;
+                }
+
+                const latestPost = allPosts[0]; // Assuming posts are sorted by date
+                
+                postLatestArticleBtn.disabled = true;
+                document.getElementById('post-latest-text').classList.add('hidden');
+                document.getElementById('post-latest-spinner').classList.remove('hidden');
+                
+                try {
+                    const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(latestPost.path)}`;
+                    
+                    const response = await fetch('/api/bluesky/post-article', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: latestPost.title,
+                            content: latestPost.content.replace(/<[^>]*>/g, '').substring(0, 200), // Strip HTML and limit length
+                            url: articleUrl,
+                            image_url: latestPost.imageUrl
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(`Successfully posted "${latestPost.title}" to Bluesky!\n\nPost URI: ${data.post_uri}`);
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to post to Bluesky');
+                    }
+                } catch (error) {
+                    alert('Failed to post to Bluesky. Please try again.');
+                } finally {
+                    postLatestArticleBtn.disabled = false;
+                    document.getElementById('post-latest-text').classList.remove('hidden');
+                    document.getElementById('post-latest-spinner').classList.add('hidden');
+                }
+            }
+
+            async function bulkPostArticlesToBluesky() {
+                if (allPosts.length === 0) {
+                    alert('No articles found. Please scan for articles first.');
+                    return;
+                }
+
+                const recentPosts = allPosts.slice(0, 5); // Post up to 5 most recent articles
+                
+                if (!confirm(`This will post the ${recentPosts.length} most recent articles to Bluesky. Continue?`)) {
+                    return;
+                }
+                
+                bulkPostArticlesBtn.disabled = true;
+                document.getElementById('bulk-post-text').classList.add('hidden');
+                document.getElementById('bulk-post-spinner').classList.remove('hidden');
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                try {
+                    for (const post of recentPosts) {
+                        const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(post.path)}`;
+                        
+                        try {
+                            const response = await fetch('/api/bluesky/post-article', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    title: post.title,
+                                    content: post.content.replace(/<[^>]*>/g, '').substring(0, 200),
+                                    url: articleUrl,
+                                    image_url: post.imageUrl
+                                })
+                            });
+
+                            if (response.ok) {
+                                successCount++;
+                            } else {
+                                failCount++;
+                            }
+                            
+                            // Add a small delay between posts to be respectful to the API
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            
+                        } catch (error) {
+                            failCount++;
+                        }
+                    }
+                    
+                    alert(`Bulk posting completed!\n\nSuccessful: ${successCount}\nFailed: ${failCount}`);
+                    
+                } catch (error) {
+                    alert('Bulk posting failed. Please try again.');
+                } finally {
+                    bulkPostArticlesBtn.disabled = false;
+                    document.getElementById('bulk-post-text').classList.remove('hidden');
+                    document.getElementById('bulk-post-spinner').classList.add('hidden');
+                }
+            }
+
+            function toggleBlueskyPasswordVisibility() {
+                const eyeOpen = document.getElementById('bluesky-eye-open');
+                const eyeClosed = document.getElementById('bluesky-eye-closed');
+                
+                if (blueskyAppPasswordInput.type === 'password') {
+                    blueskyAppPasswordInput.type = 'text';
+                    eyeOpen.classList.add('hidden');
+                    eyeClosed.classList.remove('hidden');
+                } else {
+                    blueskyAppPasswordInput.type = 'password';
+                    eyeOpen.classList.remove('hidden');
+                    eyeClosed.classList.add('hidden');
+                }
+            }
+
+            // --- FEDIVERSE FUNCTIONS ---
+            function updateFediverseStatus() {
+                if (blogConfig.has_fediverse_credentials) {
+                    fediverseStatusElement.textContent = 'Configured';
+                    fediverseStatusElement.className = 'px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                    fediverseInstanceDisplay.textContent = blogConfig.fediverse_instance || 'Not configured';
+                    fediverseUsernameDisplay.textContent = blogConfig.fediverse_username || 'Not configured';
+                    testFediverseConnectionBtn.disabled = false;
+                    fediverseActions.classList.remove('hidden');
+                    
+                    // Pre-populate form with current values
+                    if (fediverseInstanceInput && blogConfig.fediverse_instance) {
+                        fediverseInstanceInput.value = blogConfig.fediverse_instance;
+                    }
+                    if (fediverseUsernameInput && blogConfig.fediverse_username) {
+                        fediverseUsernameInput.value = blogConfig.fediverse_username;
+                    }
+                } else {
+                    fediverseStatusElement.textContent = 'Not Configured';
+                    fediverseStatusElement.className = 'px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                    fediverseInstanceDisplay.textContent = 'Not configured';
+                    fediverseUsernameDisplay.textContent = 'Not configured';
+                    testFediverseConnectionBtn.disabled = true;
+                    fediverseActions.classList.add('hidden');
+                }
+            }
+
+            async function handleFediverseConfigSubmit(e) {
+                e.preventDefault();
+                const instance = fediverseInstanceInput.value.trim();
+                const username = fediverseUsernameInput.value.trim();
+                const accessToken = fediverseAccessTokenInput.value.trim();
+                
+                if (!instance || !username || !accessToken) {
+                    alert('Please fill in all fields: instance URL, username, and access token');
+                    return;
+                }
+                
+                // Basic URL validation
+                try {
+                    new URL(instance);
+                } catch {
+                    alert('Please enter a valid instance URL (e.g., https://mastodon.social)');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/config/fediverse', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            instance: instance,
+                            username: username,
+                            access_token: accessToken 
+                        })
+                    });
+
+                    if (response.ok) {
+                        blogConfig.has_fediverse_credentials = true;
+                        blogConfig.fediverse_instance = instance;
+                        blogConfig.fediverse_username = username;
+                        updateFediverseStatus();
+                        alert('Fediverse configuration saved successfully!');
+                        fediverseAccessTokenInput.value = ''; // Clear access token field
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to save Fediverse configuration');
+                    }
+                } catch (error) {
+                    alert('Failed to save Fediverse configuration. Please try again.');
+                }
+            }
+
+            async function testFediverseConnection() {
+                testFediverseConnectionBtn.disabled = true;
+                const originalText = testFediverseConnectionBtn.textContent;
+                testFediverseConnectionBtn.textContent = 'Testing...';
+                
+                try {
+                    const response = await fetch('/api/fediverse/test-connection', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(data.message || 'Fediverse connection successful!');
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to connect to Fediverse');
+                    }
+                } catch (error) {
+                    alert('Failed to test Fediverse connection. Please try again.');
+                } finally {
+                    testFediverseConnectionBtn.disabled = false;
+                    testFediverseConnectionBtn.textContent = originalText;
+                }
+            }
+
+            async function postLatestArticleToFediverse() {
+                if (allPosts.length === 0) {
+                    alert('No articles found. Please scan for articles first.');
+                    return;
+                }
+
+                const latestPost = allPosts[0]; // Assuming posts are sorted by date
+                
+                postLatestArticleFediverseBtn.disabled = true;
+                document.getElementById('post-latest-fediverse-text').classList.add('hidden');
+                document.getElementById('post-latest-fediverse-spinner').classList.remove('hidden');
+                
+                try {
+                    const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(latestPost.path)}`;
+                    
+                    // Create hashtags from the article tag
+                    const hashtags = latestPost.tag ? `#${latestPost.tag.replace(/\s+/g, '').toLowerCase()}` : '#blog';
+                    
+                    const response = await fetch('/api/fediverse/post-article', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: latestPost.title,
+                            content: latestPost.content.replace(/<[^>]*>/g, '').substring(0, 200), // Strip HTML and limit length
+                            url: articleUrl,
+                            hashtags: hashtags
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        alert(`Successfully posted "${latestPost.title}" to Fediverse!\n\nPost URL: ${data.post_url}`);
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Failed to post to Fediverse');
+                    }
+                } catch (error) {
+                    alert('Failed to post to Fediverse. Please try again.');
+                } finally {
+                    postLatestArticleFediverseBtn.disabled = false;
+                    document.getElementById('post-latest-fediverse-text').classList.remove('hidden');
+                    document.getElementById('post-latest-fediverse-spinner').classList.add('hidden');
+                }
+            }
+
+            async function bulkPostArticlesToFediverse() {
+                if (allPosts.length === 0) {
+                    alert('No articles found. Please scan for articles first.');
+                    return;
+                }
+
+                const recentPosts = allPosts.slice(0, 5); // Post up to 5 most recent articles
+                
+                if (!confirm(`This will post the ${recentPosts.length} most recent articles to Fediverse. Continue?`)) {
+                    return;
+                }
+                
+                bulkPostArticlesFediverseBtn.disabled = true;
+                document.getElementById('bulk-post-fediverse-text').classList.add('hidden');
+                document.getElementById('bulk-post-fediverse-spinner').classList.remove('hidden');
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                try {
+                    for (const post of recentPosts) {
+                        const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(post.path)}`;
+                        const hashtags = post.tag ? `#${post.tag.replace(/\s+/g, '').toLowerCase()}` : '#blog';
+                        
+                        try {
+                            const response = await fetch('/api/fediverse/post-article', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    title: post.title,
+                                    content: post.content.replace(/<[^>]*>/g, '').substring(0, 200),
+                                    url: articleUrl,
+                                    hashtags: hashtags
+                                })
+                            });
+
+                            if (response.ok) {
+                                successCount++;
+                            } else {
+                                failCount++;
+                            }
+                            
+                            // Add a delay between posts to be respectful to the instance
+                            await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds for Mastodon
+                            
+                        } catch (error) {
+                            failCount++;
+                        }
+                    }
+                    
+                    alert(`Bulk posting completed!\n\nSuccessful: ${successCount}\nFailed: ${failCount}`);
+                    
+                } catch (error) {
+                    alert('Bulk posting failed. Please try again.');
+                } finally {
+                    bulkPostArticlesFediverseBtn.disabled = false;
+                    document.getElementById('bulk-post-fediverse-text').classList.remove('hidden');
+                    document.getElementById('bulk-post-fediverse-spinner').classList.add('hidden');
+                }
+            }
+
+            function toggleFediversePasswordVisibility() {
+                const eyeOpen = document.getElementById('fediverse-eye-open');
+                const eyeClosed = document.getElementById('fediverse-eye-closed');
+                
+                if (fediverseAccessTokenInput.type === 'password') {
+                    fediverseAccessTokenInput.type = 'text';
+                    eyeOpen.classList.add('hidden');
+                    eyeClosed.classList.remove('hidden');
+                } else {
+                    fediverseAccessTokenInput.type = 'password';
+                    eyeOpen.classList.remove('hidden');
+                    eyeClosed.classList.add('hidden');
+                }
+            }
+
             // --- INITIALIZATION ---
             async function init() {
                 // Always load public config first (available to all visitors)
@@ -1469,6 +2156,20 @@ searchInput.addEventListener('input', handleSearch);
                 toggleGeminiPasswordBtn.addEventListener('click', toggleGeminiPasswordVisibility);
                 // Analytics listener
                 loadAnalyticsBtn.addEventListener('click', loadAnalytics);
+                
+                // Bluesky listeners
+                blueskyConfigForm.addEventListener('submit', handleBlueskyConfigSubmit);
+                testBlueskyConnectionBtn.addEventListener('click', testBlueskyConnection);
+                toggleBlueskyPasswordBtn.addEventListener('click', toggleBlueskyPasswordVisibility);
+                postLatestArticleBtn.addEventListener('click', postLatestArticleToBluesky);
+                bulkPostArticlesBtn.addEventListener('click', bulkPostArticlesToBluesky);
+                
+                // Fediverse listeners
+                fediverseConfigForm.addEventListener('submit', handleFediverseConfigSubmit);
+                testFediverseConnectionBtn.addEventListener('click', testFediverseConnection);
+                toggleFediversePasswordBtn.addEventListener('click', toggleFediversePasswordVisibility);
+                postLatestArticleFediverseBtn.addEventListener('click', postLatestArticleToFediverse);
+                bulkPostArticlesFediverseBtn.addEventListener('click', bulkPostArticlesToFediverse);
             }
 
             // Function to check URL hash and open specific article

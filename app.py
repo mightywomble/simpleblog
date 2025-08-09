@@ -22,6 +22,8 @@ from PIL import Image
 from io import BytesIO
 import openai
 
+# Bluesky integration will be imported after app creation
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -118,7 +120,7 @@ def track_visit(article=None):
 init_db()
 
 # Article database functions
-def save_articles_to_db(articles):
+def save_articles_to_db(articles, auto_post_to_bluesky=False):
     """Save or update articles in the database"""
     try:
         with db_lock:
@@ -144,6 +146,21 @@ def save_articles_to_db(articles):
             conn.commit()
             conn.close()
             logging.info(f"✅ Saved {len(articles)} articles to database")
+            
+            # Auto-post new articles to Bluesky if enabled
+            if auto_post_to_bluesky:
+                try:
+                    bluesky = BlueskyIntegration()
+                    for article in articles:
+                        bluesky.post_article(
+                            title=article['title'],
+                            content_preview=article['content'][:300],
+                            article_url=f"/articles/{article['path']}",
+                            image_url=article.get('imageUrl')
+                        )
+                except Exception as e:
+                    logging.warning(f"⚠️ Failed to post to Bluesky: {e}")
+            
             return True
     except Exception as e:
         logging.error(f"❌ Failed to save articles to database: {e}")
@@ -743,7 +760,9 @@ def get_config():
         'repositories': config.get('repositories', []),
         'session_timeout_hours': config.get('session_timeout_hours', 24),
         'has_gemini_api_key': bool(config.get('gemini_api_key')),
-        'has_openai_api_key': bool(config.get('openai_api_key'))
+        'has_openai_api_key': bool(config.get('openai_api_key')),
+        'has_bluesky_credentials': bool(config.get('bluesky_handle') and config.get('bluesky_app_password')),
+        'bluesky_handle': config.get('bluesky_handle', '') if config.get('bluesky_handle') else ''
     }
     return jsonify(safe_config)
 
@@ -1125,6 +1144,14 @@ def index():
     # Track homepage visit
     track_visit('homepage')
     return render_template('index.html')
+
+# Setup Bluesky integration
+try:
+    from bluesky_integration import setup_bluesky_routes
+    setup_bluesky_routes(app)
+    print("✅ Bluesky integration enabled")
+except ImportError as e:
+    print(f"⚠️ Bluesky integration not available: {e}")
 
 print("🚀 FLASK APP STARTING WITH NEW CODE - VERSION 2.0 🚀")
 print("🔧 Debug mode enabled, image generation configured")
