@@ -853,11 +853,8 @@
                 }
             }
 
-                // Load public config first (available to all visitors)
-                await loadPublicConfig();
-                if (blogConfig.public_base_url) {
-                    window.PUBLIC_BASE_URL = blogConfig.public_base_url;
-                }
+            // Load public config first (available to all visitors)
+            async function loadPublicConfig() {
                 try {
                     const response = await fetch('/api/public/config');
                     if (response.ok) {
@@ -865,6 +862,9 @@
                         repositories = blogConfig.repositories || [];
                         updateBlogName();
                         renderRepos();
+                        if (blogConfig.public_base_url) {
+                            window.PUBLIC_BASE_URL = blogConfig.public_base_url;
+                        }
                     }
                 } catch (error) {
                     console.error('Error loading public config:', error);
