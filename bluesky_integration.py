@@ -59,33 +59,67 @@ class BlueskyIntegration:
             except Exception:
                 pass
 
-            # Build hashtags requested
-            hashtags = "#daveknowstech #blog #blogpost #tech #techblog"
-            text_base = (title or '').strip()
-            # Prefer keeping full link and hashtags; trim title if needed
-            # Structure: "{title} {link} {hashtags}"
-            def compose(t):
-                return f"{t} {link} {hashtags}".strip()
+            # Build hashtags: keep previous defaults and merge with provided example, deduplicated
+            default_tags = ["#daveknowstech", "#blog", "#blogpost", "#tech", "#techblog"]
+            example_tags = ["#vibecode", "#ai", "#ssh", "#tech", "#ssh", "#daveknowstech"]
+            seen = set()
+            merged_tags = []
+            for tag in default_tags + example_tags:
+                if tag not in seen:
+                    seen.add(tag)
+                    merged_tags.append(tag)
+            hashtags_line = " ".join(merged_tags)
 
-            post_text = compose(text_base)
+            summary = (title or '').strip()
+
+            # Compose multiline template:
+            # Line 1: summary/title
+            # Line 2: Read more: <URL>
+            # Line 3: hashtags
+            def build_text(s, tags_str):
+                parts = []
+                if s:
+                    parts.append(s)
+                if link:
+                    parts.append(f"Read more: {link}")
+                if tags_str:
+                    parts.append(tags_str)
+                return "\n\n".join(parts)
+
+            post_text = build_text(summary, hashtags_line)
             max_len = 300
+
+            # If too long, first drop trailing hashtags one by one, then trim summary with ellipsis
             if len(post_text) > max_len:
-                # Reserve for link + space + hashtags + space
-                fixed = f" {link} {hashtags}" if link else f" {hashtags}"
-                budget = max_len - len(fixed)
-                if budget < 0:
-                    # If hashtags+link alone exceed limit, drop hashtags first
-                    fixed = f" {link}" if link else ""
-                    budget = max_len - len(fixed)
-                    if budget < 0:
-                        # As a last resort, just hard-trim composed text
-                        post_text = (text_base + fixed)[:max_len-1] + '…'
+                tags = merged_tags.copy()
+                while len(post_text) > max_len and tags:
+                    tags.pop()  # drop last tag
+                    post_text = build_text(summary, " ".join(tags))
+                if len(post_text) > max_len:
+                    # Need to trim the summary to fit within the remaining budget
+                    # Keep link and whatever tags remain if possible
+                    remaining_tags = " ".join(tags)
+                    # Compute fixed portion length when title is empty
+                    fixed_text = build_text("", remaining_tags)
+                    # If both link and tags absent, fixed_text may be empty; account for separators when title exists
+                    # We'll rebuild iteratively trimming the summary
+                    if not fixed_text:
+                        # Only summary present; trim directly
+                        if len(summary) > max_len:
+                            post_text = summary[:max_len-1] + '…'
+                        else:
+                            post_text = summary
                     else:
-                        trimmed_title = (text_base[:max(0, budget-1)] + '…') if len(text_base) > budget else text_base
-                        post_text = f"{trimmed_title}{fixed}"
-                else:
-                    trimmed_title = (text_base[:max(0, budget-1)] + '…') if len(text_base) > budget else text_base
-                    post_text = f"{trimmed_title}{fixed}"
+                        # We will include summary and fixed_text separated by two newlines
+                        # Reserve for "\n\n" separator between summary and fixed_text
+                        sep = "\n\n"
+                        budget = max_len - (len(fixed_text) + len(sep))
+                        if budget <= 0:
+                            # No room for summary; keep only fixed_text, and if still too long, trim tags already handled
+                            post_text = fixed_text[:max_len]
+                        else:
+                            trimmed_summary = summary if len(summary) <= budget else (summary[:max(0, budget-1)] + '…')
+                            post_text = trimmed_summary + sep + fixed_text
 
             # Build facets for links and hashtags so they are clickable
             facets = []
