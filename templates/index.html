@@ -1804,6 +1804,21 @@
                 return { title: t, content: c, url: u };
             }
 
+            // Compose a single-line "title URL" within 300 graphemes for Bluesky-only minimal posts
+            function composeTitleAndUrl(title, url, maxGraphemes = 300) {
+                const space = ' ';
+                const u = url || '';
+                let t = title || '';
+                const availableForTitle = Math.max(0, maxGraphemes - countGraphemes(u) - (u ? countGraphemes(space) : 0));
+                if (countGraphemes(t) > availableForTitle) {
+                    const ellipsis = '…';
+                    // Reserve room for ellipsis if we need to trim
+                    const trimBudget = Math.max(0, availableForTitle - countGraphemes(ellipsis));
+                    t = trimToGraphemes(t, trimBudget) + (trimBudget > 0 ? ellipsis : '');
+                }
+                return u ? `${t}${space}${u}` : t;
+            }
+
             // --- BLUESKY FUNCTIONS ---
             function updateBlueskyStatus() {
                 if (blogConfig.has_bluesky_credentials) {
@@ -1898,17 +1913,16 @@
                 
                 try {
                     const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(latestPost.path)}`;
-                    const plain = latestPost.content.replace(/\u003c[^\u003e]*\u003e/g, '');
-                    // Compose fields to fit within 300 graphemes
-                    const composed = composeBlueskyFields(latestPost.title, plain, articleUrl, 300);
+                    // Minimal Bluesky post: just header and link
+                    const minimal = composeTitleAndUrl(latestPost.title, articleUrl, 300);
                     
                     const response = await fetch('/api/bluesky/post-article', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            title: composed.title,
-                            content: composed.content,
-                            url: composed.url,
+                            title: minimal,
+                            content: '',
+                            url: '',
                             image_url: latestPost.imageUrl
                         })
                     });
@@ -1953,15 +1967,14 @@
                         const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(post.path)}`;
                         
                         try {
-                            const plain = post.content.replace(/\u003c[^\u003e]*\u003e/g, '');
-                            const composed = composeBlueskyFields(post.title, plain, articleUrl, 300);
+                            const minimal = composeTitleAndUrl(post.title, articleUrl, 300);
                             const response = await fetch('/api/bluesky/post-article', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    title: composed.title,
-                                    content: composed.content,
-                                    url: composed.url,
+                                    title: minimal,
+                                    content: '',
+                                    url: '',
                                     image_url: post.imageUrl
                                 })
                             });
