@@ -4,7 +4,7 @@ Handles cross-posting and fetching engagement data from Bluesky
 """
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 class BlueskyIntegration:
@@ -46,36 +46,33 @@ class BlueskyIntegration:
             return None
             
         try:
-            # Prepare post text
-            post_text = f"📝 New blog post: {title}\n\n{content_preview[:200]}"
-            if len(content_preview) > 200:
-                post_text += "..."
-            post_text += f"\n\n🔗 Read more: {article_url}"
-            
-            # Create the record
+            # User requested: only header and link in the post body
+            text_base = (title or '').strip()
+            link = (article_url or '').strip()
+            post_text = f"{text_base} {link}".strip()
+            # Ensure within 300 characters (approx graphemes)
+            if len(post_text) > 300:
+                # Reserve space for a space and part of the link if present
+                if link and len(link) < 150:
+                    # keep full link, trim title
+                    budget_for_title = 300 - len(link) - 1
+                    if budget_for_title < 0:
+                        budget_for_title = 0
+                    post_text = f"{text_base[:max(0,budget_for_title-1)]}… {link}".strip()
+                else:
+                    # no link or very long link: just hard trim
+                    post_text = post_text[:299] + '…'
+
+            # Create the record with valid RFC-3339/ISO-8601 UTC timestamp
+            created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
             record = {
                 "$type": "app.bsky.feed.post",
                 "text": post_text,
-                "createdAt": datetime.now().isoformat(),
+                "createdAt": created_at,
             }
             
-            # Add link embed if provided
-            if article_url:
-                record["embed"] = {
-                    "$type": "app.bsky.embed.external",
-                    "external": {
-                        "uri": article_url,
-                        "title": title,
-                        "description": content_preview[:300]
-                    }
-                }
-                
-                # Add thumbnail if available
-                if image_url and image_url.startswith('http'):
-                    # Upload image to Bluesky
-                    blob_response = self.upload_image(image_url)
-                    if blob_response:
-                        record["embed"]["external"]["thumb"] = blob_response
+            # Keep it minimal: omit embed to match "just header and link"
+            # If you later want rich preview, you can reintroduce the external embed.
             
             # Post to Bluesky
             response = requests.post(
