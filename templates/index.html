@@ -1738,6 +1738,72 @@
                 }
             }
 
+            // --- Utility: Grapheme-safe length and trimming ---
+            function countGraphemes(str) {
+                try {
+                    if (window.Intl && Intl.Segmenter) {
+                        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+                        return Array.from(seg.segment(str)).length;
+                    }
+                } catch {}
+                return Array.from(str).length; // Fallback: code points
+            }
+            function trimToGraphemes(str, max) {
+                try {
+                    if (window.Intl && Intl.Segmenter) {
+                        const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+                        const it = seg.segment(str)[Symbol.iterator]();
+                        let out = '';
+                        let count = 0;
+                        while (count < max) {
+                            const n = it.next();
+                            if (n.done) break;
+                            out += n.value.segment;
+                            count++;
+                        }
+                        return out;
+                    }
+                } catch {}
+                // Fallback: slice by code points
+                return Array.from(str).slice(0, max).join('');
+            }
+            function composeBlueskyFields(title, plainContent, url, maxGraphemes = 300) {
+                // We assume backend posts: title + "\n\n" + content + "\n\n" + url
+                const sep = '\n\n';
+                let t = title || '';
+                let c = plainContent || '';
+                const u = url || '';
+                // Function to compute total length
+                const totalLen = () => countGraphemes(t) + (t ? countGraphemes(sep) : 0)
+                                   + (c ? countGraphemes(c) + countGraphemes(sep) : 0)
+                                   + (u ? countGraphemes(u) : 0);
+                // Trim content first
+                let ellipsis = '…';
+                while (totalLen() > maxGraphemes && c) {
+                    const budget = Math.max(0, maxGraphemes - (countGraphemes(t) + (t ? countGraphemes(sep) : 0) + (u ? countGraphemes(sep) + countGraphemes(u) : 0)));
+                    if (budget <= 0) { c = ''; break; }
+                    // keep room for ellipsis if we are trimming
+                    const trimmed = trimToGraphemes(c, Math.max(0, budget - countGraphemes(ellipsis)));
+                    if (countGraphemes(trimmed) < countGraphemes(c)) {
+                        c = trimmed + ellipsis;
+                    } else {
+                        break;
+                    }
+                }
+                // If still too long, trim title
+                while (totalLen() > maxGraphemes && t) {
+                    const budget = Math.max(0, maxGraphemes - ((c ? countGraphemes(c) + countGraphemes(sep) : 0) + (u ? countGraphemes(u) : 0)));
+                    if (budget <= 0) { t = ''; break; }
+                    const trimmedT = trimToGraphemes(t, Math.max(0, budget - countGraphemes(ellipsis)));
+                    if (countGraphemes(trimmedT) < countGraphemes(t)) {
+                        t = trimmedT + ellipsis;
+                    } else {
+                        break;
+                    }
+                }
+                return { title: t, content: c, url: u };
+            }
+
             // --- BLUESKY FUNCTIONS ---
             function updateBlueskyStatus() {
                 if (blogConfig.has_bluesky_credentials) {
@@ -1832,14 +1898,17 @@
                 
                 try {
                     const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(latestPost.path)}`;
+                    const plain = latestPost.content.replace(/\u003c[^\u003e]*\u003e/g, '');
+                    // Compose fields to fit within 300 graphemes
+                    const composed = composeBlueskyFields(latestPost.title, plain, articleUrl, 300);
                     
                     const response = await fetch('/api/bluesky/post-article', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            title: latestPost.title,
-                            content: latestPost.content.replace(/<[^>]*>/g, '').substring(0, 200), // Strip HTML and limit length
-                            url: articleUrl,
+                            title: composed.title,
+                            content: composed.content,
+                            url: composed.url,
                             image_url: latestPost.imageUrl
                         })
                     });
@@ -1884,13 +1953,15 @@
                         const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(post.path)}`;
                         
                         try {
+                            const plain = post.content.replace(/\u003c[^\u003e]*\u003e/g, '');
+                            const composed = composeBlueskyFields(post.title, plain, articleUrl, 300);
                             const response = await fetch('/api/bluesky/post-article', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    title: post.title,
-                                    content: post.content.replace(/<[^>]*>/g, '').substring(0, 200),
-                                    url: articleUrl,
+                                    title: composed.title,
+                                    content: composed.content,
+                                    url: composed.url,
                                     image_url: post.imageUrl
                                 })
                             });
