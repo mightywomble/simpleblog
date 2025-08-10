@@ -46,22 +46,45 @@ class BlueskyIntegration:
             return None
             
         try:
-            # User requested: only header and link in the post body
-            text_base = (title or '').strip()
+            # Load public_base_url for proper links
             link = (article_url or '').strip()
-            post_text = f"{text_base} {link}".strip()
-            # Ensure within 300 characters (approx graphemes)
-            if len(post_text) > 300:
-                # Reserve space for a space and part of the link if present
-                if link and len(link) < 150:
-                    # keep full link, trim title
-                    budget_for_title = 300 - len(link) - 1
-                    if budget_for_title < 0:
-                        budget_for_title = 0
-                    post_text = f"{text_base[:max(0,budget_for_title-1)]}… {link}".strip()
+            try:
+                cfg = self.load_config()
+                base = (cfg or {}).get('public_base_url')
+                if base:
+                    # If client passed a hash-only URL, rebuild fully
+                    if link.startswith('#') or link.startswith('/'):
+                        link = f"{base}{link}"
+            except Exception:
+                pass
+
+            # Build hashtags requested
+            hashtags = "#daveknowstech #blog #blogpost #tech #techblog"
+            text_base = (title or '').strip()
+            # Prefer keeping full link and hashtags; trim title if needed
+            # Structure: "{title} {link} {hashtags}"
+            def compose(t):
+                return f"{t} {link} {hashtags}".strip()
+
+            post_text = compose(text_base)
+            max_len = 300
+            if len(post_text) > max_len:
+                # Reserve for link + space + hashtags + space
+                fixed = f" {link} {hashtags}" if link else f" {hashtags}"
+                budget = max_len - len(fixed)
+                if budget < 0:
+                    # If hashtags+link alone exceed limit, drop hashtags first
+                    fixed = f" {link}" if link else ""
+                    budget = max_len - len(fixed)
+                    if budget < 0:
+                        # As a last resort, just hard-trim composed text
+                        post_text = (text_base + fixed)[:max_len-1] + '…'
+                    else:
+                        trimmed_title = (text_base[:max(0, budget-1)] + '…') if len(text_base) > budget else text_base
+                        post_text = f"{trimmed_title}{fixed}"
                 else:
-                    # no link or very long link: just hard trim
-                    post_text = post_text[:299] + '…'
+                    trimmed_title = (text_base[:max(0, budget-1)] + '…') if len(text_base) > budget else text_base
+                    post_text = f"{trimmed_title}{fixed}"
 
             # Create the record with valid RFC-3339/ISO-8601 UTC timestamp
             created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
@@ -71,10 +94,7 @@ class BlueskyIntegration:
                 "createdAt": created_at,
             }
             
-            # Keep it minimal: omit embed to match "just header and link"
-            # If you later want rich preview, you can reintroduce the external embed.
-            
-            # Post to Bluesky
+            # Post to Bluesky (minimal record)
             response = requests.post(
                 f"{self.api_base}/com.atproto.repo.createRecord",
                 headers={

@@ -762,7 +762,8 @@ def get_config():
         'has_gemini_api_key': bool(config.get('gemini_api_key')),
         'has_openai_api_key': bool(config.get('openai_api_key')),
         'has_bluesky_credentials': bool(config.get('bluesky_handle') and config.get('bluesky_app_password')),
-        'bluesky_handle': config.get('bluesky_handle', '') if config.get('bluesky_handle') else ''
+        'bluesky_handle': config.get('bluesky_handle', '') if config.get('bluesky_handle') else '',
+        'public_base_url': config.get('public_base_url', '')
     }
     return jsonify(safe_config)
 
@@ -780,6 +781,34 @@ def update_blog_name():
     
     config['blog_name'] = data['blog_name'].strip()
     
+    if save_config(config):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'Failed to save configuration'}), 500
+
+@app.route('/api/config/public-base-url', methods=['POST'])
+@require_auth
+def set_public_base_url():
+    """Set the public base URL used for links in social posts"""
+    data = request.get_json()
+    if not data or not data.get('public_base_url'):
+        return jsonify({'error': 'Public base URL required'}), 400
+
+    base_url = data['public_base_url'].strip()
+    # Basic normalization: remove trailing slash
+    if base_url.endswith('/'):
+        base_url = base_url[:-1]
+
+    # Basic validation
+    if not (base_url.startswith('http://') or base_url.startswith('https://')):
+        return jsonify({'error': 'Public base URL must start with http:// or https://'}), 400
+
+    config = load_config()
+    if not config:
+        return jsonify({'error': 'Configuration error'}), 500
+
+    config['public_base_url'] = base_url
+
     if save_config(config):
         return jsonify({'success': True})
     else:
@@ -957,7 +986,8 @@ def get_public_config():
     # Return only public information
     public_config = {
         'blog_name': config.get('blog_name', 'My Blog'),
-        'repositories': config.get('repositories', [])
+        'repositories': config.get('repositories', []),
+        'public_base_url': config.get('public_base_url', '')
     }
     return jsonify(public_config)
 

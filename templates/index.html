@@ -853,8 +853,11 @@
                 }
             }
 
-            // Load public configuration (available to all visitors)
-            async function loadPublicConfig() {
+                // Load public config first (available to all visitors)
+                await loadPublicConfig();
+                if (blogConfig.public_base_url) {
+                    window.PUBLIC_BASE_URL = blogConfig.public_base_url;
+                }
                 try {
                     const response = await fetch('/api/public/config');
                     if (response.ok) {
@@ -881,6 +884,10 @@
                         updateOpenaiStatus();
                         updateBlueskyStatus();
                         updateFediverseStatus();
+                        // Cache public base URL if provided
+                        if (blogConfig.public_base_url) {
+                            window.PUBLIC_BASE_URL = blogConfig.public_base_url;
+                        }
                     }
                 } catch (error) {
                     console.error('Error loading config:', error);
@@ -1039,7 +1046,10 @@
             function updateBlogName() {
                 if (blogConfig.blog_name) {
                     blogTitleElement.textContent = blogConfig.blog_name;
-                    blogNameInput.value = blogConfig.blog_name;
+                    document.title = blogConfig.blog_name;
+                    if (blogNameInput) {
+                        blogNameInput.value = blogConfig.blog_name;
+                    }
                 }
             }
 
@@ -1912,7 +1922,8 @@
                 document.getElementById('post-latest-spinner').classList.remove('hidden');
                 
                 try {
-                    const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(latestPost.path)}`;
+                    const base = window.PUBLIC_BASE_URL || `${window.location.origin}${window.location.pathname}`;
+                    const articleUrl = `${base}#article-${encodeURIComponent(latestPost.path)}`;
                     // Minimal Bluesky post: just header and link
                     const minimal = composeTitleAndUrl(latestPost.title, articleUrl, 300);
                     
@@ -1964,7 +1975,8 @@
                 
                 try {
                     for (const post of recentPosts) {
-                        const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(post.path)}`;
+                        const base = window.PUBLIC_BASE_URL || `${window.location.origin}${window.location.pathname}`;
+                        const articleUrl = `${base}#article-${encodeURIComponent(post.path)}`;
                         
                         try {
                             const minimal = composeTitleAndUrl(post.title, articleUrl, 300);
@@ -2131,7 +2143,8 @@
                 document.getElementById('post-latest-fediverse-spinner').classList.remove('hidden');
                 
                 try {
-                    const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(latestPost.path)}`;
+                    const base = window.PUBLIC_BASE_URL || `${window.location.origin}${window.location.pathname}`;
+                    const articleUrl = `${base}#article-${encodeURIComponent(latestPost.path)}`;
                     
                     // Create hashtags from the article tag
                     const hashtags = latestPost.tag ? `#${latestPost.tag.replace(/\s+/g, '').toLowerCase()}` : '#blog';
@@ -2184,7 +2197,8 @@
                 
                 try {
                     for (const post of recentPosts) {
-                        const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(post.path)}`;
+                        const base = window.PUBLIC_BASE_URL || `${window.location.origin}${window.location.pathname}`;
+                        const articleUrl = `${base}#article-${encodeURIComponent(post.path)}`;
                         const hashtags = post.tag ? `#${post.tag.replace(/\s+/g, '').toLowerCase()}` : '#blog';
                         
                         try {
@@ -2344,7 +2358,8 @@ searchInput.addEventListener('input', handleSearch);
                 modalCloseBtn.addEventListener('click', closeArticleModal);
                 document.getElementById('modal-share').addEventListener('click', () => {
                     if (window.currentPost) {
-                        const articleUrl = `${window.location.origin}${window.location.pathname}#article-${encodeURIComponent(window.currentPost.path)}`;
+                        const base = window.PUBLIC_BASE_URL || `${window.location.origin}${window.location.pathname}`;
+                        const articleUrl = `${base}#article-${encodeURIComponent(window.currentPost.path)}`;
                         
                         if (navigator.share) {
                             navigator.share({
