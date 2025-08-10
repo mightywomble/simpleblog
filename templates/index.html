@@ -741,377 +741,6 @@
                         </div>
                     </div>
                 </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <h3 class="text-xl font-semibold mb-4">Manage Repositories</h3>
-                        <form id="add-repo-form" class="flex items-center space-x-2">
-                            <input type="text" id="repo-url" placeholder="e.g., username/repository" class="border rounded-lg py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 whitespace-nowrap">Add Repo</button>
-                        </form>
-                        <div id="repo-list" class="mt-4"></div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h3 class="text-xl font-semibold mb-4">Actions</h3>
-                        <div class="space-y-3">
-                            <button id="scan-btn" class="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 flex items-center justify-center w-full">
-                                <span id="scan-btn-text">Scan for New Articles</span>
-                                <span id="scan-spinner" class="hidden animate-spin">&#9696;</span>
-                            </button>
-                            <button id="rescan-btn" class="bg-orange-500 text-white py-2 px-6 rounded-lg hover:bg-orange-600 flex items-center justify-center w-full">
-                                <span id="rescan-btn-text">Rescan Repositories</span>
-                                <span id="rescan-spinner" class="hidden animate-spin">&#9696;</span>
-                            </button>
-                            <button id="regenerate-images-btn" class="bg-purple-500 text-white py-2 px-6 rounded-lg hover:bg-purple-600 flex items-center justify-center w-full">
-                                <span id="regenerate-btn-text">Regenerate All Images</span>
-                                <span id="regenerate-spinner" class="hidden animate-spin">&#9696;</span>
-                            </button>
-                            <div id="regenerate-progress" class="hidden mt-3">
-                                <div class="flex justify-between text-sm text-gray-600 mb-1">
-                                    <span id="progress-text">Processing images...</span>
-                                    <span id="progress-count">0/0</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div id="progress-bar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <h3 class="text-xl font-semibold mb-4">Blog Name</h3>
-                        <form id="blog-name-form" class="flex items-center space-x-2">
-                            <input type="text" id="blog-name-input" placeholder="Enter new blog name" class="border rounded-lg py-2 px-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <button type="submit" class="bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 whitespace-nowrap">Update Name</button>
-                        </form>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <h3 class="text-xl font-semibold mb-4">Change Password</h3>
-                        <form id="change-password-form">
-                            <div class="mb-4">
-                                <label for="current-password-admin" class="block text-sm font-medium text-gray-700">Current Password</label>
-                                <input type="password" id="current-password-admin" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="new-password-admin" class="block text-sm font-medium text-gray-700">New Password</label>
-                                <input type="password" id="new-password-admin" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
-                            </div>
-                            <div class="mb-6">
-                                <label for="confirm-password-admin" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                                <input type="password" id="confirm-password-admin" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
-                            </div>
-                            <button type="submit" class="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">Update Password</button>
-                        </form>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <h3 class="text-xl font-semibold mb-4">OpenAI API Configuration</h3>
-                        <div class="mb-4">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-sm text-gray-600">Status:</span>
-                                <span id="openai-status" class="px-2 py-1 rounded-full text-xs font-medium">Checking...</span>
-                            </div>
-                        </div>
-                        <form id="openai-api-form">
-                            <div class="mb-4">
-                                <label for="openai-api-key" class="block text-sm font-medium text-gray-700">OpenAI API Key</label>
-                                <div class="relative">
-                                    <input type="password" id="openai-api-key" placeholder="Enter your OpenAI API key" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm pr-10" required>
-                                    <button type="button" id="toggle-openai-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <svg id="openai-eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        <svg id="openai-eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500">Primary image generation service using DALL-E. Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-500 hover:underline">OpenAI Platform</a>.</p>
-                            </div>
-                            <button type="submit" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600">Save API Key</button>
-                        </form>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h3 class="text-xl font-semibold mb-4">Gemini API Configuration</h3>
-                        <div class="mb-4">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-sm text-gray-600">Status:</span>
-                                <span id="gemini-status" class="px-2 py-1 rounded-full text-xs font-medium">Checking...</span>
-                            </div>
-                        </div>
-                        <form id="gemini-api-form">
-                            <div class="mb-4">
-                                <label for="gemini-api-key" class="block text-sm font-medium text-gray-700">Gemini API Key</label>
-                                <div class="relative">
-                                    <input type="password" id="gemini-api-key" placeholder="Enter your Gemini API key" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm pr-10" required>
-                                    <button type="button" id="toggle-gemini-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <svg id="eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 616 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        <svg id="eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500">Fallback image generation service. Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-500 hover:underline">Google AI Studio</a>.</p>
-                            </div>
-                            <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Save API Key</button>
-                        </form>
-                    </div>
-
-                    <!-- Bluesky Integration Section -->
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <div class="flex items-center mb-4">
-                            <svg class="w-6 h-6 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                            <h3 class="text-xl font-semibold">🦋 Bluesky Integration</h3>
-                        </div>
-                        
-                        <!-- Status Display -->
-                        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-sm font-medium text-gray-700">Status:</span>
-                                        <span id="bluesky-status" class="px-2 py-1 rounded-full text-xs font-medium">Checking...</span>
-                                    </div>
-                                    <div class="mt-1">
-                                        <span class="text-sm text-gray-600">Handle:</span>
-                                        <span id="bluesky-handle-display" class="text-sm font-mono">Not configured</span>
-                                    </div>
-                                </div>
-                                <button id="test-bluesky-connection" class="bg-blue-500 text-white py-1 px-3 rounded text-sm hover:bg-blue-600 disabled:opacity-50" disabled>
-                                    Test Connection
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Configuration Form -->
-                        <form id="bluesky-config-form">
-                            <div class="mb-4">
-                                <label for="bluesky-handle" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Bluesky Handle
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" id="bluesky-handle" placeholder="username.bsky.social" 
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Your Bluesky username (e.g., yourname.bsky.social or your custom domain)
-                                </p>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="bluesky-app-password" class="block text-sm font-medium text-gray-700 mb-2">
-                                    App Password
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="password" id="bluesky-app-password" placeholder="Enter your Bluesky app password" 
-                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm pr-10 focus:ring-blue-500 focus:border-blue-500" required>
-                                    <button type="button" id="toggle-bluesky-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <svg id="bluesky-eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        <svg id="bluesky-eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    ⚠️ <strong>Not your account password!</strong> Create an app password in Bluesky settings.
-                                </p>
-                            </div>
-
-                            <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mb-4">
-                                Save Bluesky Configuration
-                            </button>
-                        </form>
-
-                        <!-- Setup Instructions -->
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <h4 class="text-sm font-medium text-yellow-800">Setup Instructions</h4>
-                                    <div class="mt-2 text-sm text-yellow-700">
-                                        <ol class="list-decimal list-inside space-y-1">
-                                            <li>Go to <a href="https://bsky.app/settings/app-passwords" target="_blank" class="text-blue-600 hover:underline font-medium">Bluesky App Passwords</a></li>
-                                            <li>Click "Add App Password"</li>
-                                            <li>Name it "SimpleBlog" or similar</li>
-                                            <li>Copy the generated password and paste it above</li>
-                                            <li>Save your configuration and test the connection</li>
-                                        </ol>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cross-posting Actions -->
-                        <div id="bluesky-actions" class="hidden">
-                            <div class="border-t pt-4">
-                                <h4 class="font-medium text-gray-900 mb-3">🚀 Cross-posting Actions</h4>
-                                <div class="space-y-2">
-                                    <button id="post-latest-article-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 flex items-center justify-center">
-                                        <span id="post-latest-text">Post Latest Article to Bluesky</span>
-                                        <span id="post-latest-spinner" class="hidden animate-spin ml-2">⏳</span>
-                                    </button>
-                                    <button id="bulk-post-articles-btn" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 flex items-center justify-center">
-                                        <span id="bulk-post-text">Post All Recent Articles</span>
-                                        <span id="bulk-post-spinner" class="hidden animate-spin ml-2">⏳</span>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2">
-                                    💡 Tip: After posting, you can track engagement stats for each article!
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Fediverse/Mastodon Integration Section -->
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <div class="flex items-center mb-4">
-                            <svg class="w-6 h-6 text-purple-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.594 3.681.433 1.934 1.178 3.676 2.37 5.183 1.207 1.529 2.809 2.471 4.668 2.886 1.16.258 2.354.196 3.518.084 2.102-.2 4.002-.914 5.6-2.314.08-.07.155-.145.22-.225.9-1.1 1.505-2.378 1.837-3.744.264-1.084.42-2.19.420-3.327 0-.249-.007-.497-.019-.744-.024-.477-.058-.952-.108-1.426-.025-.234-.06-.467-.101-.698-.082-.463-.2-.917-.367-1.357-.334-.882-.814-1.714-1.443-2.447-.629-.733-1.392-1.36-2.243-1.877-.426-.259-.873-.482-1.347-.67-.237-.094-.48-.176-.728-.248-.496-.144-1.006-.218-1.516-.218-.17 0-.341.008-.511.024-.34.032-.675.08-1.004.144-.33.064-.654.144-.97.24-.316.096-.625.208-.925.336-.6.256-1.17.58-1.686.964-.516.384-.976.818-1.363 1.295-.387.477-.698 1-.915 1.554-.217.554-.338 1.138-.338 1.732 0 .594.121 1.178.338 1.732.217.554.528 1.077.915 1.554.387.477.847.911 1.363 1.295.516.384 1.086.708 1.686.964.3.128.609.24.925.336.316.096.64.176.97.24.329.064.664.112 1.004.144.17.016.341.024.511.024.51 0 1.02-.074 1.516-.218.248-.072.491-.154.728-.248.474-.188.921-.411 1.347-.67.851-.517 1.614-1.144 2.243-1.877.629-.733 1.109-1.565 1.443-2.447.167-.44.285-.894.367-1.357.041-.231.076-.464.101-.698.05-.474.084-.949.108-1.426.012-.247.019-.495.019-.744 0-1.137-.156-2.243-.42-3.327-.332-1.366-.937-2.644-1.837-3.744-.065-.08-.14-.155-.22-.225-1.598-1.4-3.498-2.114-5.6-2.314-1.164-.112-2.358-.174-3.518.084-1.859.415-3.461 1.357-4.668 2.886-1.192 1.507-1.937 3.249-2.37 5.183-.269 1.211-.476 2.441-.594 3.681-.172 1.866-.186 3.737-.26 5.611-.051 1.306-.021 2.731.256 4.016.579 2.609 2.965 4.435 5.608 4.824.453.067 1.308.309 5.288.309h.03c3.979 0 5.697-.242 6.15-.309 2.687-.394 4.954-2.426 5.304-5.004.63-4.639.63-4.639.63-4.639s0-5.21-.63-9.849z"/>
-                            </svg>
-                            <h3 class="text-xl font-semibold">🐘 Fediverse Integration</h3>
-                        </div>
-                        
-                        <!-- Status Display -->
-                        <div class="mb-4 p-4 bg-purple-50 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-sm font-medium text-gray-700">Status:</span>
-                                        <span id="fediverse-status" class="px-2 py-1 rounded-full text-xs font-medium">Checking...</span>
-                                    </div>
-                                    <div class="mt-1">
-                                        <span class="text-sm text-gray-600">Instance:</span>
-                                        <span id="fediverse-instance-display" class="text-sm font-mono">Not configured</span>
-                                    </div>
-                                    <div class="mt-1">
-                                        <span class="text-sm text-gray-600">Username:</span>
-                                        <span id="fediverse-username-display" class="text-sm font-mono">Not configured</span>
-                                    </div>
-                                </div>
-                                <button id="test-fediverse-connection" class="bg-purple-500 text-white py-1 px-3 rounded text-sm hover:bg-purple-600 disabled:opacity-50" disabled>
-                                    Test Connection
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Configuration Form -->
-                        <form id="fediverse-config-form">
-                            <div class="mb-4">
-                                <label for="fediverse-instance" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Mastodon/Fediverse Instance URL
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <input type="url" id="fediverse-instance" placeholder="https://mastodon.social" 
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500" required>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Your Mastodon instance URL (e.g., https://mastodon.social, https://fosstodon.org)
-                                </p>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="fediverse-username" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Username
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" id="fediverse-username" placeholder="your_username" 
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500" required>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Your username without the @ symbol or instance domain
-                                </p>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="fediverse-access-token" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Access Token
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="password" id="fediverse-access-token" placeholder="Enter your access token" 
-                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm pr-10 focus:ring-purple-500 focus:border-purple-500" required>
-                                    <button type="button" id="toggle-fediverse-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <svg id="fediverse-eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        <svg id="fediverse-eye-closed" class="h-5 w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    ⚠️ <strong>Keep this secure!</strong> Generate an access token in your instance's developer settings.
-                                </p>
-                            </div>
-
-                            <button type="submit" class="w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 mb-4">
-                                Save Fediverse Configuration
-                            </button>
-                        </form>
-
-                        <!-- Setup Instructions -->
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <h4 class="text-sm font-medium text-yellow-800">Setup Instructions</h4>
-                                    <div class="mt-2 text-sm text-yellow-700">
-                                        <ol class="list-decimal list-inside space-y-1">
-                                            <li>Go to your Mastodon instance (e.g. mastodon.social/settings/applications)</li>
-                                            <li>Click "New Application" or "Development"</li>
-                                            <li>Name it "SimpleBlog" and set scopes to "write:statuses"</li>
-                                            <li>Copy your instance URL, username, and access token above</li>
-                                            <li>Save your configuration and test the connection</li>
-                                        </ol>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cross-posting Actions -->
-                        <div id="fediverse-actions" class="hidden">
-                            <div class="border-t pt-4">
-                                <h4 class="font-medium text-gray-900 mb-3">🚀 Cross-posting Actions</h4>
-                                <div class="space-y-2">
-                                    <button id="post-latest-article-fediverse-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 flex items-center justify-center">
-                                        <span id="post-latest-fediverse-text">Post Latest Article to Fediverse</span>
-                                        <span id="post-latest-fediverse-spinner" class="hidden animate-spin ml-2">⏳</span>
-                                    </button>
-                                    <button id="bulk-post-articles-fediverse-btn" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 flex items-center justify-center">
-                                        <span id="bulk-post-fediverse-text">Post All Recent Articles</span>
-                                        <span id="bulk-post-fediverse-spinner" class="hidden animate-spin ml-2">⏳</span>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2">
-                                    💡 Tip: Posts will include hashtags and links back to your blog!
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1733,8 +1362,12 @@
                 window.history.pushState(null, null, window.location.pathname);
             }
 
-            function showAdminPanel() { adminPanel.classList.remove('hidden'); }
-            function hideAdminPanel() { adminPanel.classList.add('hidden'); }
+            function showAdminPanel() { 
+                adminPanel.classList.remove('hidden'); 
+            }
+            function hideAdminPanel() { 
+                adminPanel.classList.add('hidden'); 
+            }
             function showAdminLogin() { adminLoginModal.classList.remove('hidden'); adminLoginModal.classList.add('flex'); }
             function hideAdminLogin() { adminLoginModal.classList.add('hidden'); adminLoginModal.classList.remove('flex'); }
             function showForcePasswordChange() { forcePasswordChangeModal.classList.remove('hidden'); forcePasswordChangeModal.classList.add('flex'); }
@@ -2523,6 +2156,8 @@
             }
 
             // --- SIDEBAR NAVIGATION ---
+            const ADMIN_SECTIONS = ['analytics','repositories','actions','blog-settings','security','ai-services','social-media'];
+
             function showAdminSection(sectionName) {
                 // Hide all sections
                 document.querySelectorAll('.admin-section').forEach(section => {
@@ -2545,6 +2180,37 @@
                 if (activeNavItem) {
                     activeNavItem.classList.add('bg-indigo-100', 'text-indigo-700');
                 }
+            }
+
+            function navigateToAdminSection(sectionName) {
+                // Normalize section name and ensure it's valid
+                const target = ADMIN_SECTIONS.includes(sectionName) ? sectionName : 'analytics';
+                // Set hash-based route, triggering hashchange
+                const newHash = `#settings/${target}`;
+                if (window.location.hash !== newHash) {
+                    window.location.hash = newHash;
+                } else {
+                    // If already on same hash, manually handle route
+                    handleHashRoute();
+                }
+            }
+
+            function handleHashRoute() {
+                const hash = window.location.hash || '';
+                // Admin routing: #settings or #settings/<section>
+                if (hash.startsWith('#settings')) {
+                    if (isLoggedIn) {
+                        showAdminPanel();
+                        const parts = hash.split('/');
+                        const section = parts[1] ? parts[1] : 'analytics'; // when hash is exactly '#settings'
+                        const normalized = ADMIN_SECTIONS.includes(section) ? section : 'analytics';
+                        showAdminSection(normalized);
+                    } else {
+                        // Not logged in: show login modal and remember desired section
+                        showAdminLogin();
+                    }
+                }
+                // Article deep link handled elsewhere via checkForArticleHash
             }
 
             // --- INITIALIZATION ---
@@ -2625,14 +2291,23 @@ searchInput.addEventListener('input', handleSearch);
                 // Admin listeners
                 adminLoginBtn.addEventListener('click', () => {
                     if (isLoggedIn) {
-                        showAdminPanel();
+                        // Navigate to default admin section as a page
+                        navigateToAdminSection('analytics');
                     } else {
+                        // Set the hash so that after login we can land in admin
+                        window.location.hash = '#settings/analytics';
                         showAdminLogin();
                     }
                 });
                 adminLoginForm.addEventListener('submit', login);
                 adminLoginCloseBtn.addEventListener('click', hideAdminLogin);
-                adminPanelCloseBtn.addEventListener('click', hideAdminPanel);
+                adminPanelCloseBtn.addEventListener('click', () => {
+                    hideAdminPanel();
+                    // Clear settings hash if present
+                    if (window.location.hash.startsWith('#settings')) {
+                        history.pushState(null, '', window.location.pathname);
+                    }
+                });
                 forcePasswordChangeForm.addEventListener('submit', handleForcePasswordChange);
                 changePasswordForm.addEventListener('submit', handleChangePassword);
                 addRepoForm.addEventListener('submit', addRepo);
@@ -2668,13 +2343,18 @@ searchInput.addEventListener('input', handleSearch);
                 document.querySelectorAll('.sidebar-nav-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         const section = e.currentTarget.dataset.section;
-                        showAdminSection(section);
+                        navigateToAdminSection(section);
                     });
                 });
                 
                 // Set default active section when opening admin panel
                 if (isLoggedIn) {
-                    showAdminSection('analytics'); // Default to analytics section
+                    // If a settings hash is already present, route to it; otherwise default
+                    if (window.location.hash.startsWith('#settings')) {
+                        handleHashRoute();
+                    } else {
+                        showAdminSection('analytics');
+                    }
                 }
             }
 
@@ -2695,17 +2375,29 @@ searchInput.addEventListener('input', handleSearch);
             
             // Listen for hash changes (back/forward browser navigation)
             window.addEventListener('hashchange', () => {
-                if (!window.location.hash) {
-                    // Hash was cleared, close modal if open
+                const hash = window.location.hash;
+                if (!hash) {
+                    // Hash was cleared
                     if (!articleModal.classList.contains('hidden')) {
                         closeArticleModal();
                     }
-                } else {
+                    if (!adminPanel.classList.contains('hidden')) {
+                        hideAdminPanel();
+                    }
+                    return;
+                }
+
+                // Route based on hash
+                if (hash.startsWith('#article-')) {
                     checkForArticleHash();
+                } else if (hash.startsWith('#settings')) {
+                    handleHashRoute();
                 }
             });
 
             init();
+            // Handle initial hash route for settings as page navigation
+            handleHashRoute();
         });
     </script>
 </body>
