@@ -6,6 +6,7 @@ import requests
 import json
 from datetime import datetime, timezone
 import logging
+import re
 
 class BlueskyIntegration:
     def __init__(self):
@@ -86,6 +87,39 @@ class BlueskyIntegration:
                     trimmed_title = (text_base[:max(0, budget-1)] + '…') if len(text_base) > budget else text_base
                     post_text = f"{trimmed_title}{fixed}"
 
+            # Build facets for links and hashtags so they are clickable
+            facets = []
+            
+            # Helper: build UTF-8 byte position map for the text
+            byte_pos = [0]
+            for ch in post_text:
+                byte_pos.append(byte_pos[-1] + len(ch.encode('utf-8')))
+            def to_bytes(char_start, char_end):
+                return byte_pos[char_start], byte_pos[char_end]
+
+            # Link facet, if a link is present in the composed text
+            if link:
+                link_start = post_text.find(link)
+                if link_start != -1:
+                    link_end = link_start + len(link)
+                    b_start, b_end = to_bytes(link_start, link_end)
+                    facets.append({
+                        "index": {"byteStart": b_start, "byteEnd": b_end},
+                        "features": [{"$type": "app.bsky.richtext.facet#link", "uri": link}]
+                    })
+
+            # Hashtag facets: annotate each #tag sequence
+            for m in re.finditer(r"(?<!\w)#([A-Za-z0-9_]+)", post_text):
+                tag_text = m.group(0)  # includes '#'
+                tag = m.group(1)       # without '#'
+                start = m.start()
+                end = m.end()
+                b_start, b_end = to_bytes(start, end)
+                facets.append({
+                    "index": {"byteStart": b_start, "byteEnd": b_end},
+                    "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": tag}]
+                })
+
             # Create the record with valid RFC-3339/ISO-8601 UTC timestamp
             created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
             record = {
@@ -93,8 +127,10 @@ class BlueskyIntegration:
                 "text": post_text,
                 "createdAt": created_at,
             }
+            if facets:
+                record["facets"] = facets
             
-            # Post to Bluesky (minimal record)
+            # Post to Bluesky (with facets for rich text)
             response = requests.post(
                 f"{self.api_base}/com.atproto.repo.createRecord",
                 headers={
